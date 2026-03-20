@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  PICKUP_SCHEDULED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  DELAYED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum ParcelSize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum WhatsappTemplateType {
+  ORDER_CONFIRMATION
+  PICKUP_SCHEDULED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  DELAY_ALERT
+}
+
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  phone          String   @unique
+  name           String
+  surname        String
+  email          String
+  password       String
+  isVerified     Boolean  @default(false)
+  defaultAddress Json?
+  isAdmin        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model Order {
+  id              String        @id @default(uuid()) @db.Uuid
+  trackingNumber  String        @unique
+  senderId        String        @db.Uuid
+  pickupAddress   Json
+  deliveryAddress Json
+  parcelDetails   Json
+  status          OrderStatus   @default(PENDING_PAYMENT)
+  quoteAmount     Int
+  paymentStatus   PaymentStatus @default(PENDING)
+  receiverPhone   String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  sender   User                 @relation(fields: [senderId], references: [id])
+  timeline OrderTimelineEntry[]
+  payments Payment[]
+  whatsappLogs WhatsappLog[]
+
+  @@map("orders")
+}
+
+model OrderTimelineEntry {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @db.Uuid
+  status    String
+  timestamp DateTime @default(now())
+  note      String?
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("order_timeline_entries")
+}
+
+model Payment {
+  id        String        @id @default(uuid()) @db.Uuid
+  orderId   String        @db.Uuid
+  amount    Int
+  gateway   String        @default("payfast")
+  reference String        @unique
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
+}
+
+model Otp {
+  id        String   @id @default(uuid()) @db.Uuid
+  phone     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+  @@map("otps")
+}
+
+model WhatsappLog {
+  id              String               @id @default(uuid()) @db.Uuid
+  orderId         String               @db.Uuid
+  recipientPhone  String
+  messageType     WhatsappTemplateType
+  content         String
+  sentAt          DateTime             @default(now())
+  deliveryStatus  String               @default("sent")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("whatsapp_logs")
+}

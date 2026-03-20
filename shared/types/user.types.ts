@@ -5,6 +5,9 @@ export interface User {
   /** E.164 format phone number, e.g. +27812345678 */
   readonly phone: string;
   readonly name: string;
+  readonly surname: string;
+  readonly email: string;
+  readonly isVerified: boolean;
   readonly defaultAddress?: Address;
   readonly isAdmin: boolean;
   readonly createdAt: string;
