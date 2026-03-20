@@ -4,11 +4,24 @@ import type { WhatsappTemplateType } from "./whatsapp.types";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
-export interface SendOtpRequest {
+export interface RegisterRequest {
+  readonly name: string;
+  readonly surname: string;
   readonly phone: string;
+  readonly email: string;
+  readonly password: string;
 }
 
-export interface SendOtpResponse {
+export interface RegisterResponse {
+  readonly message: string;
+}
+
+export interface LoginRequest {
+  readonly phone: string;
+  readonly password: string;
+}
+
+export interface LoginResponse {
   readonly message: string;
 }
 
@@ -19,6 +32,14 @@ export interface VerifyOtpRequest {
 
 export interface VerifyOtpResponse {
   readonly user: User;
+}
+
+export interface ResendOtpRequest {
+  readonly phone: string;
+}
+
+export interface ResendOtpResponse {
+  readonly message: string;
 }
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
