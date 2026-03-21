@@ -1,6 +1,6 @@
-import type { Address, Order, OrderStatus, OrderTimeline, ParcelDetails, ParcelSize } from "./order.types";
-import type { User } from "./user.types";
-import type { WhatsappTemplateType } from "./whatsapp.types";
+import type { Address, Order, OrderStatus, OrderTimeline, ParcelDetails, ParcelSize } from "./order.types.js";
+import type { User } from "./user.types.js";
+import type { WhatsappTemplateType } from "./whatsapp.types.js";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 

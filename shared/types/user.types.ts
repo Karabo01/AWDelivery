@@ -1,4 +1,4 @@
-import type { Address } from "./order.types";
+import type { Address } from "./order.types.js";
 
 export interface User {
   readonly id: string;

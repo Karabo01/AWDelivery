@@ -1,4 +1,4 @@
-import type { PaymentStatus } from "./order.types";
+import type { PaymentStatus } from "./order.types.js";
 
 export interface Payment {
   readonly id: string;
