@@ -180,7 +180,10 @@ export const handlers: RequestHandler[] = [
 		const seededUser: User = {
 			id: 'mock-user-1',
 			phone,
-			name: 'Demo Sender',
+			name: 'Demo',
+			surname: 'Sender',
+			email: 'demo@example.com',
+			isVerified: true,
 			isAdmin: false,
 			createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
 		}
