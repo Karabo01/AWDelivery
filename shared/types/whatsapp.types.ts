@@ -5,11 +5,12 @@ export enum WhatsappTemplateType {
   IN_TRANSIT = "IN_TRANSIT",
   DELIVERED = "DELIVERED",
   DELAY_ALERT = "DELAY_ALERT",
+  OTP_VERIFICATION = "OTP_VERIFICATION",
 }
 
 export interface WhatsappLog {
   readonly id: string;
-  readonly orderId: string;
+  readonly orderId?: string;
   /** Recipient phone in E.164 format */
   readonly recipientPhone: string;
   readonly messageType: WhatsappTemplateType;

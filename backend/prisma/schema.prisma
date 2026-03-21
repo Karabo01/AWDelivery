@@ -38,6 +38,7 @@ enum WhatsappTemplateType {
   IN_TRANSIT
   DELIVERED
   DELAY_ALERT
+  OTP_VERIFICATION
 }
 
 model User {
@@ -45,7 +46,7 @@ model User {
   phone          String   @unique
   name           String
   surname        String
-  email          String
+  email          String   @unique
   password       String
   isVerified     Boolean  @default(false)
   defaultAddress Json?
@@ -118,14 +119,14 @@ model Otp {
 
 model WhatsappLog {
   id              String               @id @default(uuid()) @db.Uuid
-  orderId         String               @db.Uuid
+  orderId         String?              @db.Uuid
   recipientPhone  String
   messageType     WhatsappTemplateType
   content         String
   sentAt          DateTime             @default(now())
   deliveryStatus  String               @default("sent")
 
-  order Order @relation(fields: [orderId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
 
   @@map("whatsapp_logs")
 }

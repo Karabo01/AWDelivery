@@ -131,10 +131,10 @@ router.post("/webhook", async (req, res) => {
 
       // Send WhatsApp confirmation (fire and forget)
       sendWhatsAppMessage(
-        orderId,
         order.receiverPhone,
         "ORDER_CONFIRMATION",
         { trackingNumber: order.trackingNumber },
+        orderId,
       ).catch((err) =>
         console.error("[WhatsApp] Failed to send confirmation:", err),
       );
