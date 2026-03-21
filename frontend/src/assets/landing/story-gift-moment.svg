@@ -1,0 +1,43 @@
+<svg viewBox="0 0 1600 1200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 4:3 aspect ratio for story cards -->
+  <defs>
+    <linearGradient id="storyGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D58A57;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3B27F;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="safeZone3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8650A;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#FDFAF6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="1600" height="1200" fill="#FDFAF6"/>
+  <rect width="1600" height="1200" fill="url(#storyGrad3)" opacity="0.12"/>
+  
+  <!-- Safe composition zone -->
+  <g stroke="#E8650A" stroke-width="2" stroke-dasharray="15,15" opacity="0.2" fill="none">
+    <rect x="240" y="180" width="1120" height="840"/>
+  </g>
+  
+  <!-- Accent shapes -->
+  <circle cx="300" cy="250" r="180" fill="#D58A57" opacity="0.1"/>
+  <path d="M 1300 800 L 1600 900 L 1600 1200 L 1300 1200 Z" fill="url(#safeZone3)"/>
+  
+  <!-- Labels -->
+  <g fill="#774F1F" font-family="system-ui, -apple-system, sans-serif" opacity="0.5">
+    <text x="800" y="520" font-size="42" font-weight="600" text-anchor="middle" letter-spacing="1">
+      GIFT MOMENT
+    </text>
+    <text x="800" y="580" font-size="24" text-anchor="middle" opacity="0.45">
+      Happy recipient receiving parcel
+    </text>
+    <text x="800" y="640" font-size="18" text-anchor="middle" opacity="0.35">
+      Keep subject in center frame (dashed box)
+    </text>
+  </g>
+  
+  <!-- Bottom info -->
+  <g fill="#95654A" font-family="system-ui, -apple-system, sans-serif" font-size="16" opacity="0.35">
+    <text x="50" y="1170">Aspect ratio: 4:3 (1600 × 1200 px) | Min: 1280 × 960 px</text>
+  </g>
+</svg>

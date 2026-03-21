@@ -13,25 +13,46 @@ function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="text-lg font-bold tracking-tight">
+    <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-md">
+      <div className="mx-auto flex h-[4.5rem] w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+        <Link to="/" className="font-display text-2xl font-semibold tracking-tight text-foreground">
           AWDelivery
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm sm:flex">
-          <NavLink to="/" className="text-muted-foreground hover:text-foreground">
+        <nav className="hidden items-center gap-2 rounded-full border border-border/80 bg-card/70 p-1.5 text-sm sm:flex">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              `rounded-full px-3 py-1.5 transition ${
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
+              }`
+            }
+          >
             Home
           </NavLink>
           <NavLink
             to="/order/new"
-            className="text-muted-foreground hover:text-foreground"
+            className={({ isActive }) =>
+              `rounded-full px-3 py-1.5 transition ${
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
+              }`
+            }
           >
             New Order
           </NavLink>
           <NavLink
             to="/dashboard"
-            className="text-muted-foreground hover:text-foreground"
+            className={({ isActive }) =>
+              `rounded-full px-3 py-1.5 transition ${
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
+              }`
+            }
           >
             Dashboard
           </NavLink>

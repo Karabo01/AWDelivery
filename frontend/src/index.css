@@ -1,51 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500..700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --background: 32 58% 97%;
+    --foreground: 25 10% 10%;
+    --card: 34 50% 98%;
+    --card-foreground: 25 10% 10%;
+    --popover: 34 50% 98%;
+    --popover-foreground: 25 10% 10%;
+    --primary: 22 92% 47%;
+    --primary-foreground: 32 58% 97%;
+    --secondary: 30 24% 91%;
+    --secondary-foreground: 25 10% 10%;
+    --muted: 30 28% 93%;
+    --muted-foreground: 24 7% 35%;
+    --accent: 30 68% 90%;
+    --accent-foreground: 25 10% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-    --radius: 0.5rem;
+    --border: 28 23% 84%;
+    --input: 28 25% 87%;
+    --ring: 22 92% 47%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 25 10% 11%;
+    --foreground: 32 38% 94%;
+    --card: 25 10% 14%;
+    --card-foreground: 32 38% 94%;
+    --popover: 25 10% 14%;
+    --popover-foreground: 32 38% 94%;
+    --primary: 22 92% 55%;
+    --primary-foreground: 25 10% 10%;
+    --secondary: 25 10% 19%;
+    --secondary-foreground: 32 38% 94%;
+    --muted: 25 10% 19%;
+    --muted-foreground: 28 14% 70%;
+    --accent: 24 24% 24%;
+    --accent-foreground: 32 38% 94%;
+    --destructive: 0 62% 36%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 25 10% 24%;
+    --input: 25 10% 25%;
+    --ring: 22 92% 55%;
   }
 
   * {
@@ -53,6 +55,100 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+    background-image:
+      radial-gradient(circle at 14% -10%, hsl(var(--primary) / 0.16), transparent 40%),
+      radial-gradient(circle at 100% 0%, hsl(var(--accent) / 0.24), transparent 35%);
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Fraunces', serif;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: 'Fraunces', serif;
+  }
+}
+
+@layer utilities {
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-enter {
+      animation: fade-up 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .animate-enter-soft {
+      animation: fade-in 900ms ease both;
+    }
+
+    .animate-delay-1 {
+      animation-delay: 90ms;
+    }
+
+    .animate-delay-2 {
+      animation-delay: 180ms;
+    }
+
+    .animate-delay-3 {
+      animation-delay: 270ms;
+    }
+
+    .animate-delay-4 {
+      animation-delay: 360ms;
+    }
+
+    .animate-float-subtle {
+      animation: float-subtle 7s ease-in-out infinite;
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes float-subtle {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-6px);
+    }
   }
 }

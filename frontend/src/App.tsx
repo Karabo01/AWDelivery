@@ -13,9 +13,13 @@ import TrackingPage from '@/pages/TrackingPage'
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-background">
+      <div className="relative isolate min-h-screen overflow-x-hidden bg-background text-foreground">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-primary/10 via-transparent to-transparent"
+        />
         <Navbar />
-        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />

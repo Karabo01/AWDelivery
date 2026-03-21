@@ -1,0 +1,18 @@
+<svg width="1600" height="1100" viewBox="0 0 1600 1100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="1100" rx="40" fill="#FDFAF6"/>
+  <rect x="60" y="60" width="1480" height="980" rx="30" fill="#F6E6D7" stroke="#D9C6B6" stroke-width="3" stroke-dasharray="14 14"/>
+  <circle cx="1210" cy="250" r="170" fill="#F3B27F" fill-opacity="0.35"/>
+  <circle cx="360" cy="850" r="220" fill="#E8650A" fill-opacity="0.14"/>
+  <rect x="160" y="130" width="270" height="46" rx="23" fill="#1C1917" fill-opacity="0.08"/>
+  <rect x="182" y="145" width="225" height="16" rx="8" fill="#1C1917" fill-opacity="0.22"/>
+  <path d="M430 770C430 655.125 523.125 562 638 562H692C806.875 562 900 655.125 900 770V840H430V770Z" fill="#D58A57"/>
+  <circle cx="665" cy="470" r="86" fill="#F1D6C0"/>
+  <path d="M840 790C840 676.229 932.229 584 1046 584H1092C1205.77 584 1298 676.229 1298 790V840H840V790Z" fill="#875843"/>
+  <circle cx="1072" cy="486" r="82" fill="#E9C8AC"/>
+  <rect x="720" y="610" width="214" height="148" rx="18" fill="#C7763D" stroke="#1C1917" stroke-opacity="0.12" stroke-width="4"/>
+  <path d="M726 666H930" stroke="#1C1917" stroke-opacity="0.16" stroke-width="4"/>
+  <path d="M828 610V758" stroke="#1C1917" stroke-opacity="0.16" stroke-width="4"/>
+  <rect x="200" y="900" width="1200" height="70" rx="22" fill="#1C1917" fill-opacity="0.06"/>
+  <text x="160" y="985" fill="#1C1917" fill-opacity="0.72" font-family="DM Sans, Arial, sans-serif" font-size="40" font-weight="700">Parcel handoff placeholder</text>
+  <text x="160" y="1028" fill="#1C1917" fill-opacity="0.55" font-family="DM Sans, Arial, sans-serif" font-size="28">Replace this file with a real photo to preserve the layout and image slot.</text>
+</svg>

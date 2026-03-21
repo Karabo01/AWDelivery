@@ -1,0 +1,55 @@
+<svg viewBox="0 0 2000 1200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Warm background -->
+  <defs>
+    <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F3B27F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E8650A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#D58A57;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#FDFAF6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Base -->
+  <rect width="2000" height="1200" fill="#FDFAF6"/>
+  <rect width="2000" height="1200" fill="url(#heroGradient)" opacity="0.15"/>
+  
+  <!-- Compositional guides -->
+  <g stroke="#E8650A" stroke-width="3" stroke-dasharray="20,20" opacity="0.25" fill="none">
+    <!-- Rule of thirds vertical -->
+    <line x1="667" y1="0" x2="667" y2="1200"/>
+    <line x1="1333" y1="0" x2="1333" y2="1200"/>
+    <!-- Rule of thirds horizontal -->
+    <line x1="0" y1="400" x2="2000" y2="400"/>
+    <line x1="0" y1="800" x2="2000" y2="800"/>
+    <!-- Center safe zone -->
+    <circle cx="1000" cy="600" r="500" opacity="0.2"/>
+  </g>
+  
+  <!-- Accent shapes -->
+  <rect x="0" y="0" width="600" height="400" fill="url(#accentGradient)"/>
+  <circle cx="1800" cy="200" r="250" fill="#D58A57" opacity="0.1"/>
+  <path d="M 1500 900 Q 1700 800 1900 900 L 1900 1200 L 1500 1200 Z" fill="#E8650A" opacity="0.08"/>
+  
+  <!-- Instructional text -->
+  <g fill="#774F1F" font-family="system-ui, -apple-system, sans-serif" opacity="0.6">
+    <text x="1000" y="500" font-size="48" font-weight="600" text-anchor="middle" letter-spacing="2">
+      HERO MOMENT
+    </text>
+    <text x="1000" y="560" font-size="32" text-anchor="middle" letter-spacing="1" opacity="0.5">
+      Courier / Handoff Scene
+    </text>
+    <text x="1000" y="650" font-size="24" text-anchor="middle" opacity="0.4">
+      Replace with strong first-impression photo
+    </text>
+    <text x="1000" y="700" font-size="20" text-anchor="middle" opacity="0.3">
+      Keep subjects in center 70% zone (marked circle)
+    </text>
+  </g>
+  
+  <!-- Bottom guidance -->
+  <g fill="#95654A" font-family="system-ui, -apple-system, sans-serif" font-size="18" opacity="0.4">
+    <text x="50" y="1170">Aspect ratio: 5:3 (2000 × 1200 px) | Min: 1600 × 960 px</text>
+  </g>
+</svg>

@@ -76,9 +76,14 @@ function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md py-8">
-      <Card>
-        <CardHeader>
+    <div className="mx-auto w-full max-w-lg space-y-5 py-8">
+      <div className="space-y-1 text-center">
+        <h1 className="text-4xl font-semibold tracking-tight">Create your account</h1>
+        <p className="text-sm text-muted-foreground">Start booking deliveries in under a minute.</p>
+      </div>
+
+      <Card className="border-border/85 bg-card/95">
+        <CardHeader className="pb-2">
           <CardTitle>
             {activeStep === 'register' ? 'Create an account' : 'Verify your phone'}
           </CardTitle>
@@ -173,14 +178,14 @@ function RegisterPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{' '}
-                <Link to="/login" className="text-primary underline">
+                <Link to="/login" className="font-semibold text-primary underline-offset-4 hover:underline">
                   Log in
                 </Link>
               </p>
             </form>
           ) : (
             <form className="space-y-4" onSubmit={onSubmitOtp}>
-              <p className="text-sm text-muted-foreground">
+              <p className="rounded-lg border border-border/80 bg-muted/35 px-3 py-2 text-sm text-muted-foreground">
                 We sent a 6-digit code to <strong>{phone}</strong>. Enter it below to verify your
                 account.
               </p>

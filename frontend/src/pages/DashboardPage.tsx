@@ -19,9 +19,9 @@ function DashboardPage() {
   })
 
   return (
-    <div className="space-y-6 py-2">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">My orders</h1>
+    <div className="space-y-7 py-2">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">My orders</h1>
         <p className="text-sm text-muted-foreground">
           Track your latest parcel deliveries and payment status.
         </p>
@@ -34,19 +34,19 @@ function DashboardPage() {
       ) : null}
 
       {ordersQuery.data && ordersQuery.data.data.length === 0 ? (
-        <Card>
+        <Card className="border-border/85 bg-card/95">
           <CardContent className="p-6 text-sm text-muted-foreground">
             You have no orders yet.
           </CardContent>
         </Card>
       ) : null}
 
-      <div className="grid gap-4">
+      <div className="grid gap-5">
         {ordersQuery.data?.data.map((order) => (
-          <Card key={order.id}>
+          <Card key={order.id} className="border-border/85 bg-card/95">
             <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
               <div>
-                <CardTitle className="text-base">{order.trackingNumber}</CardTitle>
+                <CardTitle className="text-lg">{order.trackingNumber}</CardTitle>
                 <CardDescription>{formatDateTime(order.createdAt)}</CardDescription>
               </div>
               <StatusBadge status={order.status} />
