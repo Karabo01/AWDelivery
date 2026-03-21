@@ -106,7 +106,7 @@ router.patch(
   "/orders/:id/status",
   validate(updateOrderStatusSchema),
   async (req, res) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status: newStatus, note } = req.body as {
       status: OrderStatus;
       note?: string;
@@ -150,7 +150,7 @@ router.post(
   "/orders/:id/notify",
   validate(notifyOrderSchema),
   async (req, res) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { templateType, recipient } = req.body as {
       templateType: WhatsappTemplateType;
       recipient: "sender" | "receiver" | "both";
