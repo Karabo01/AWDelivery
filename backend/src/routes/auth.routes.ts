@@ -12,6 +12,7 @@ import {
   resendOtpSchema,
 } from "../validation/schemas.js";
 import { AppError } from "../utils/errors.js";
+import { sendOtpMessage } from "../services/whatsapp.service.js";
 
 const SALT_ROUNDS = 12;
 const router = Router();
@@ -48,8 +49,8 @@ async function generateAndSendOtp(phone: string) {
 
   await prisma.otp.create({ data: { phone, code, expiresAt } });
 
-  // In production, send via WhatsApp/SMS
-  console.log(`[OTP] ${phone}: ${code}`);
+  // Send OTP via WhatsApp
+  await sendOtpMessage(phone, code);
 }
 
 // ─── POST /auth/register ─────────────────────────────────────────────────────
@@ -64,9 +65,15 @@ router.post("/register", validate(registerSchema), async (req, res) => {
   };
 
   // Check if phone already taken
-  const existing = await prisma.user.findUnique({ where: { phone } });
-  if (existing) {
+  const existingPhone = await prisma.user.findUnique({ where: { phone } });
+  if (existingPhone) {
     throw new AppError("An account with this phone number already exists", "PHONE_TAKEN", 409);
+  }
+
+  // Check if email already taken
+  const existingEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingEmail) {
+    throw new AppError("An account with this email already exists", "EMAIL_TAKEN", 409);
   }
 
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);

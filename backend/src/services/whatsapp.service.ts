@@ -6,15 +6,15 @@ import type { WhatsappTemplateType } from "@prisma/client";
  * Replace with a real provider (Twilio, Meta Cloud API) when ready.
  */
 export async function sendWhatsAppMessage(
-  orderId: string,
   recipientPhone: string,
   templateType: WhatsappTemplateType,
   data: Record<string, string> = {},
+  orderId?: string,
 ) {
   const content = JSON.stringify({ templateType, data });
 
   console.log(
-    `[WhatsApp Stub] Sending ${templateType} to ${recipientPhone} for order ${orderId}`,
+    `[WhatsApp Stub] Sending ${templateType} to ${recipientPhone}${orderId ? ` for order ${orderId}` : ""}`,
   );
   console.log(`[WhatsApp Stub] Content: ${content}`);
 
@@ -29,4 +29,15 @@ export async function sendWhatsAppMessage(
   });
 
   return log;
+}
+
+/**
+ * Send OTP verification message via WhatsApp
+ */
+export async function sendOtpMessage(phone: string, code: string) {
+  return sendWhatsAppMessage(
+    phone,
+    "OTP_VERIFICATION" as WhatsappTemplateType,
+    { code, expiresIn: "5 minutes" },
+  );
 }

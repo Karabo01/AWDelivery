@@ -169,20 +169,20 @@ router.post(
 
     if (recipient === "sender" || recipient === "both") {
       const log = await sendWhatsAppMessage(
-        order.id,
         order.sender.phone,
         templateType,
         { trackingNumber: order.trackingNumber },
+        order.id,
       );
       logs.push(log);
     }
 
     if (recipient === "receiver" || recipient === "both") {
       const log = await sendWhatsAppMessage(
-        order.id,
         order.receiverPhone,
         templateType,
         { trackingNumber: order.trackingNumber },
+        order.id,
       );
       logs.push(log);
     }
