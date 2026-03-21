@@ -80,9 +80,14 @@ function LoginPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md py-8">
-      <Card>
-        <CardHeader>
+    <div className="mx-auto w-full max-w-lg space-y-5 py-8">
+      <div className="space-y-1 text-center">
+        <h1 className="text-4xl font-semibold tracking-tight">Welcome back</h1>
+        <p className="text-sm text-muted-foreground">Secure access to your deliveries and live updates.</p>
+      </div>
+
+      <Card className="border-border/85 bg-card/95">
+        <CardHeader className="pb-2">
           <CardTitle>
             {activeStep === 'credentials' ? 'Login to AWDelivery' : 'Verify your identity'}
           </CardTitle>
@@ -136,14 +141,14 @@ function LoginPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Don&apos;t have an account?{' '}
-                <Link to="/register" className="text-primary underline">
+                <Link to="/register" className="font-semibold text-primary underline-offset-4 hover:underline">
                   Register
                 </Link>
               </p>
             </form>
           ) : (
             <form className="space-y-4" onSubmit={onSubmitOtp}>
-              <p className="text-sm text-muted-foreground">
+              <p className="rounded-lg border border-border/80 bg-muted/35 px-3 py-2 text-sm text-muted-foreground">
                 We sent a 6-digit code to <strong>{phone}</strong> for two-factor authentication.
               </p>
 

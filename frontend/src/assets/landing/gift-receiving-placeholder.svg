@@ -1,0 +1,17 @@
+<svg width="1600" height="1100" viewBox="0 0 1600 1100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="1100" rx="40" fill="#FDFAF6"/>
+  <rect x="60" y="60" width="1480" height="980" rx="30" fill="#F8EEE3" stroke="#D9C6B6" stroke-width="3" stroke-dasharray="14 14"/>
+  <circle cx="1210" cy="220" r="180" fill="#E8650A" fill-opacity="0.16"/>
+  <circle cx="310" cy="290" r="120" fill="#1C1917" fill-opacity="0.05"/>
+  <path d="M340 818C340 682.691 449.691 573 585 573H715C850.309 573 960 682.691 960 818V864H340V818Z" fill="#8C593F"/>
+  <circle cx="650" cy="490" r="98" fill="#F4DCC6"/>
+  <path d="M852 842C852 730.439 942.439 640 1054 640H1132C1243.56 640 1334 730.439 1334 842V864H852V842Z" fill="#E0A57D"/>
+  <circle cx="1092" cy="566" r="84" fill="#F1D6C0"/>
+  <rect x="830" y="618" width="230" height="188" rx="24" fill="#E8650A"/>
+  <path d="M944 618V806" stroke="#FDFAF6" stroke-opacity="0.85" stroke-width="14"/>
+  <path d="M830 710H1060" stroke="#FDFAF6" stroke-opacity="0.85" stroke-width="14"/>
+  <path d="M946 560C915.49 560 891 535.51 891 505C891 474.49 915.49 450 946 450C976.51 450 1001 474.49 1001 505C1001 535.51 976.51 560 946 560Z" fill="#FDFAF6" fill-opacity="0.86"/>
+  <rect x="230" y="900" width="1160" height="70" rx="22" fill="#1C1917" fill-opacity="0.06"/>
+  <text x="160" y="985" fill="#1C1917" fill-opacity="0.72" font-family="DM Sans, Arial, sans-serif" font-size="40" font-weight="700">Gift delivery placeholder</text>
+  <text x="160" y="1028" fill="#1C1917" fill-opacity="0.55" font-family="DM Sans, Arial, sans-serif" font-size="28">Swap in a real recipient photo later without changing the page code.</text>
+</svg>

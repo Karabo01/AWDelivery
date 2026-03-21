@@ -46,16 +46,16 @@ function TrackingPage() {
   const activeIndex = activeStatus ? trackingFlow.indexOf(activeStatus) : -1
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 py-2">
+    <div className="mx-auto w-full max-w-3xl space-y-7 py-2">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Track your parcel</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Track your parcel</h1>
         <p className="text-sm text-muted-foreground">Tracking number: {trackingNumber}</p>
       </div>
 
       {trackingQuery.isLoading ? <LoadingSpinner /> : null}
 
       {trackingQuery.isError ? (
-        <Card>
+        <Card className="border-border/85 bg-card/95">
           <CardContent className="p-6 text-sm text-destructive">
             Order not found for this tracking number.
           </CardContent>
@@ -64,7 +64,7 @@ function TrackingPage() {
 
       {trackingQuery.data ? (
         <>
-          <Card>
+          <Card className="border-border/85 bg-card/95">
             <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
               <CardTitle>{trackingQuery.data.order.trackingNumber}</CardTitle>
               <StatusBadge status={trackingQuery.data.order.status} />
@@ -77,7 +77,7 @@ function TrackingPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border/85 bg-card/95">
             <CardHeader>
               <CardTitle>Timeline</CardTitle>
             </CardHeader>
@@ -88,10 +88,10 @@ function TrackingPage() {
                   return (
                     <li key={status} className="flex items-start gap-3">
                       <div
-                        className={`mt-0.5 rounded-full p-1 ${
+                        className={`mt-0.5 rounded-full border p-1.5 ${
                           reached
-                            ? 'bg-primary/15 text-primary'
-                            : 'bg-muted text-muted-foreground'
+                            ? 'border-primary/30 bg-primary/15 text-primary'
+                            : 'border-border bg-muted text-muted-foreground'
                         }`}
                       >
                         {statusIcon(status, reached)}

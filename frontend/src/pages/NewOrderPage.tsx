@@ -252,17 +252,19 @@ function NewOrderPage() {
   }
 
   return (
-    <div className="space-y-6 py-2">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Create new order</h1>
-        <p className="text-sm text-muted-foreground">Step {step} of 3</p>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+    <div className="space-y-7 py-2">
+      <div className="rounded-xl border border-border/85 bg-card/80 p-5 sm:p-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">Create new order</h1>
+          <p className="text-sm text-muted-foreground">Step {step} of 3</p>
+        </div>
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
           <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {step === 1 ? (
-        <Card>
+        <Card className="border-border/85 bg-card/95">
           <CardHeader>
             <CardTitle>Step 1: Pickup address</CardTitle>
             <CardDescription>
@@ -302,7 +304,7 @@ function NewOrderPage() {
               <Textarea {...form.register('pickupNotes')} />
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-2">
               <Button onClick={goToStep2}>Continue</Button>
             </div>
           </CardContent>
@@ -310,7 +312,7 @@ function NewOrderPage() {
       ) : null}
 
       {step === 2 ? (
-        <Card>
+        <Card className="border-border/85 bg-card/95">
           <CardHeader>
             <CardTitle>Step 2: Delivery and parcel details</CardTitle>
             <CardDescription>
@@ -353,10 +355,10 @@ function NewOrderPage() {
                   return (
                     <button
                       key={option.size}
-                      className={`rounded-lg border p-3 text-left transition ${
+                      className={`rounded-xl border p-3 text-left transition ${
                         selected
-                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                          : 'hover:border-primary/40'
+                          ? 'border-primary/60 bg-primary/10 ring-2 ring-primary/25'
+                          : 'border-border/90 bg-background/70 hover:border-primary/35 hover:bg-accent/30'
                       }`}
                       type="button"
                       onClick={() => form.setValue('parcelSize', option.size)}
@@ -406,16 +408,16 @@ function NewOrderPage() {
       ) : null}
 
       {step === 3 ? (
-        <Card>
+        <Card className="border-border/85 bg-card/95">
           <CardHeader>
             <CardTitle>Step 3: Review quote</CardTitle>
             <CardDescription>Confirm the quote and continue to payment.</CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="rounded-xl border border-border/85 bg-muted/35 p-5">
               <p className="text-sm text-muted-foreground">Estimated amount</p>
-              <p className="text-2xl font-semibold">
+              <p className="pt-1 text-3xl font-semibold">
                 {quoteAmount !== null ? formatCentsToZar(quoteAmount) : '—'}
               </p>
               <p className="text-sm text-muted-foreground">
