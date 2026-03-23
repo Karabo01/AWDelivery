@@ -2,6 +2,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import useAuth from '@/hooks/useAuth'
+import logoImage from '@/assets/brand/logo.png'
 
 function Navbar() {
   const navigate = useNavigate()
@@ -16,7 +17,7 @@ function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex h-[5.5rem] w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link to="/" className="inline-flex items-center" aria-label="AWDelivery home">
-          <img src="/src/assets/brand/logo.png" alt="AWDelivery" className="h-[7rem] w-auto sm:h-[8rem]" />
+          <img src={logoImage} alt="AWDelivery" className="h-[7rem] w-auto sm:h-[8rem]" />
         </Link>
 
         <nav className="hidden items-center gap-2 rounded-full border border-border/80 bg-card/70 p-1.5 text-sm sm:flex">
