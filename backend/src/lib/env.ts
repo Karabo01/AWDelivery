@@ -1,13 +1,9 @@
 import { config } from "dotenv";
 import { resolve } from "path";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // Load .env from prisma folder (shared with Prisma)
-config({ path: resolve(__dirname, "../../prisma/.env") });
+// Use process.cwd() since the app runs from the backend directory
+config({ path: resolve(process.cwd(), "prisma/.env") });
 
 function required(name: string): string {
   const value = process.env[name];
