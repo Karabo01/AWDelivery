@@ -39,6 +39,7 @@ enum WhatsappTemplateType {
   DELIVERED
   DELAY_ALERT
   OTP_VERIFICATION
+  DRIVER_ASSIGNMENT
 }
 
 model User {

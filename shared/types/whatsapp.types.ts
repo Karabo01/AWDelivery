@@ -6,6 +6,7 @@ export enum WhatsappTemplateType {
   DELIVERED = "DELIVERED",
   DELAY_ALERT = "DELAY_ALERT",
   OTP_VERIFICATION = "OTP_VERIFICATION",
+  DRIVER_ASSIGNMENT = "DRIVER_ASSIGNMENT",
 }
 
 export interface WhatsappLog {
