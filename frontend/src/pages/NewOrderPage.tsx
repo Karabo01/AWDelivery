@@ -247,6 +247,12 @@ function NewOrderPage() {
               label="Pickup address"
               onAddressSelected={(address, formattedAddress) => applyAddressToForm('pickup', address, formattedAddress)}
             />
+            {form.formState.errors.pickupAddress && (
+              <p className="text-sm text-destructive">{form.formState.errors.pickupAddress.message}</p>
+            )}
+            {form.formState.errors.pickupLat && (
+              <p className="text-sm text-destructive">{form.formState.errors.pickupLat.message}</p>
+            )}
 
             <div className="space-y-2">
               <Label>Landmark / notes (optional)</Label>
@@ -254,7 +260,7 @@ function NewOrderPage() {
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button onClick={goToStep2}>Continue</Button>
+              <Button type="button" onClick={goToStep2}>Continue</Button>
             </div>
           </CardContent>
         </Card>
@@ -274,6 +280,12 @@ function NewOrderPage() {
               label="Delivery address"
               onAddressSelected={(address, formattedAddress) => applyAddressToForm('delivery', address, formattedAddress)}
             />
+            {form.formState.errors.deliveryAddress && (
+              <p className="text-sm text-destructive">{form.formState.errors.deliveryAddress.message}</p>
+            )}
+            {form.formState.errors.deliveryLat && (
+              <p className="text-sm text-destructive">{form.formState.errors.deliveryLat.message}</p>
+            )}
 
             <div className="space-y-2">
               <Label>Delivery notes (optional)</Label>
@@ -316,10 +328,16 @@ function NewOrderPage() {
                     })
                   }
                 />
+                {form.formState.errors.receiverPhone && (
+                  <p className="text-sm text-destructive">{form.formState.errors.receiverPhone.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Parcel weight (kg)</Label>
                 <Input type="number" step="0.1" min="0.1" {...form.register('parcelWeightKg')} />
+                {form.formState.errors.parcelWeightKg && (
+                  <p className="text-sm text-destructive">{form.formState.errors.parcelWeightKg.message}</p>
+                )}
               </div>
             </div>
 
@@ -329,10 +347,10 @@ function NewOrderPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <Button variant="outline" onClick={() => setStep(1)}>
+              <Button type="button" variant="outline" onClick={() => setStep(1)}>
                 Back
               </Button>
-              <Button onClick={fetchQuoteAndGoToStep3} disabled={quoteMutation.isPending}>
+              <Button type="button" onClick={fetchQuoteAndGoToStep3} disabled={quoteMutation.isPending}>
                 Get quote
               </Button>
             </div>
