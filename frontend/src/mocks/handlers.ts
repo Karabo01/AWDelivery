@@ -310,7 +310,7 @@ export const handlers: RequestHandler[] = [
 				paymentFormData: {
 					merchant_id: '10047175',
 					merchant_key: 'test_key',
-					amount: (quoteAmount / 100).toFixed(2),
+					amount: (quoted.amount / 100).toFixed(2),
 					item_name: `AWDelivery ${trackingNumber}`,
 					signature: 'mock_signature',
 				},
