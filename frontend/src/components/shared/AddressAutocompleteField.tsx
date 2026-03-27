@@ -1,6 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 type AddressAutocompleteValue = {
@@ -28,7 +27,7 @@ function ensureGoogleMapsPlacesLoaded() {
     return Promise.resolve()
   }
 
-  if (typeof google !== 'undefined' && google.maps?.places) {
+  if (typeof google !== 'undefined' && google.maps?.places?.PlaceAutocompleteElement) {
     return Promise.resolve()
   }
 
@@ -36,7 +35,8 @@ function ensureGoogleMapsPlacesLoaded() {
     scriptLoadingPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script')
       const key = import.meta.env.VITE_GOOGLE_MAPS_KEY
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`
+      // Use the new Places API
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&loading=async`
       script.async = true
       script.defer = true
       script.onload = () => resolve()
@@ -48,20 +48,20 @@ function ensureGoogleMapsPlacesLoaded() {
   return scriptLoadingPromise
 }
 
-function extractAddress(place: google.maps.places.PlaceResult): AddressAutocompleteValue {
-  const components = place.address_components ?? []
+function extractAddressFromPlace(place: google.maps.places.Place): AddressAutocompleteValue {
+  const components = place.addressComponents ?? []
 
   const findComponent = (...types: string[]) =>
-    components.find((component: google.maps.GeocoderAddressComponent) =>
+    components.find((component) =>
       types.some((type) => component.types.includes(type)),
     )
 
-  const streetNumber = findComponent('street_number')?.long_name ?? ''
-  const route = findComponent('route')?.long_name ?? ''
-  const suburb = findComponent('sublocality_level_1', 'sublocality', 'neighborhood')?.long_name ?? ''
-  const city = findComponent('locality', 'administrative_area_level_2')?.long_name ?? ''
-  const province = findComponent('administrative_area_level_1')?.long_name ?? ''
-  const postalCode = findComponent('postal_code')?.long_name ?? ''
+  const streetNumber = findComponent('street_number')?.longText ?? ''
+  const route = findComponent('route')?.longText ?? ''
+  const suburb = findComponent('sublocality_level_1', 'sublocality', 'neighborhood')?.longText ?? ''
+  const city = findComponent('locality', 'administrative_area_level_2')?.longText ?? ''
+  const province = findComponent('administrative_area_level_1')?.longText ?? ''
+  const postalCode = findComponent('postal_code')?.longText ?? ''
 
   return {
     street: `${streetNumber} ${route}`.trim(),
@@ -69,8 +69,8 @@ function extractAddress(place: google.maps.places.PlaceResult): AddressAutocompl
     city,
     postalCode,
     province,
-    lat: place.geometry?.location?.lat() ?? null,
-    lng: place.geometry?.location?.lng() ?? null,
+    lat: place.location?.lat() ?? null,
+    lng: place.location?.lng() ?? null,
   }
 }
 
@@ -81,52 +81,72 @@ function AddressAutocompleteField({
   onInputChange,
   onAddressSelected,
 }: AddressAutocompleteFieldProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const autocompleteRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
-    let autocomplete: google.maps.places.Autocomplete | undefined
-    let listener: google.maps.MapsEventListener | undefined
-
     void ensureGoogleMapsPlacesLoaded()
       .then(() => {
-        if (!inputRef.current || typeof google === 'undefined' || !google.maps?.places) {
-          return
-        }
-
-        autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
-          fields: ['address_components', 'formatted_address', 'geometry'],
-          componentRestrictions: { country: 'za' },
-        })
-
-        listener = autocomplete.addListener('place_changed', () => {
-          const place = autocomplete?.getPlace()
-          if (!place) {
-            return
-          }
-          const extracted = extractAddress(place)
-          onInputChange(place.formatted_address ?? extracted.street)
-          onAddressSelected(extracted)
-        })
+        setIsLoaded(true)
       })
       .catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    if (!isLoaded || !containerRef.current || autocompleteRef.current) {
+      return
+    }
+
+    if (typeof google === 'undefined' || !google.maps?.places?.PlaceAutocompleteElement) {
+      return
+    }
+
+    // Create the PlaceAutocompleteElement
+    const autocomplete = new google.maps.places.PlaceAutocompleteElement({
+      componentRestrictions: { country: 'za' },
+    })
+
+    // Style the element to match our design
+    autocomplete.style.width = '100%'
+    autocomplete.style.height = '40px'
+    autocomplete.style.fontSize = '14px'
+
+    // Listen for place selection
+    autocomplete.addEventListener('gmp-placeselect', async (event) => {
+      const placeEvent = event as google.maps.places.PlaceAutocompletePlaceSelectEvent
+      const place = placeEvent.place
+
+      // Fetch full place details
+      await place.fetchFields({
+        fields: ['addressComponents', 'formattedAddress', 'location'],
+      })
+
+      const extracted = extractAddressFromPlace(place)
+      onInputChange(place.formattedAddress ?? extracted.street)
+      onAddressSelected(extracted)
+    })
+
+    containerRef.current.appendChild(autocomplete)
+    autocompleteRef.current = autocomplete
 
     return () => {
-      if (listener) {
-        google.maps.event.removeListener(listener)
+      if (autocompleteRef.current && containerRef.current) {
+        containerRef.current.removeChild(autocompleteRef.current)
+        autocompleteRef.current = null
       }
     }
-  }, [onAddressSelected, onInputChange])
+  }, [isLoaded, onAddressSelected, onInputChange])
 
   return (
     <div className="space-y-2.5">
       <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        ref={inputRef}
-        placeholder="Start typing an address..."
-        value={value}
-        onChange={(event) => onInputChange(event.target.value)}
+      <div
+        ref={containerRef}
+        className="w-full [&>gmp-place-autocomplete]:w-full [&>gmp-place-autocomplete]:rounded-md [&>gmp-place-autocomplete]:border [&>gmp-place-autocomplete]:border-input [&>gmp-place-autocomplete]:bg-background [&>gmp-place-autocomplete]:px-3 [&>gmp-place-autocomplete]:py-2 [&>gmp-place-autocomplete]:text-sm [&>gmp-place-autocomplete]:ring-offset-background [&>gmp-place-autocomplete]:placeholder:text-muted-foreground [&>gmp-place-autocomplete]:focus-within:outline-none [&>gmp-place-autocomplete]:focus-within:ring-2 [&>gmp-place-autocomplete]:focus-within:ring-ring [&>gmp-place-autocomplete]:focus-within:ring-offset-2"
       />
+      {/* Hidden input for form value tracking */}
+      <input type="hidden" id={id} value={value} />
     </div>
   )
 }
