@@ -30,14 +30,14 @@ export function buildPayFastUrl(params: PaymentParams): string {
     item_name: params.itemName,
   };
 
-  // Build signature string (alphabetical by key)
+  // Build signature string (alphabetical by key) - use RAW values, not encoded
   const signatureString = Object.keys(data)
     .sort()
-    .map((key) => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, "+")}`)
+    .map((key) => `${key}=${data[key].trim()}`)
     .join("&");
 
   const fullString = env.PAYFAST_PASSPHRASE
-    ? `${signatureString}&passphrase=${encodeURIComponent(env.PAYFAST_PASSPHRASE).replace(/%20/g, "+")}`
+    ? `${signatureString}&passphrase=${env.PAYFAST_PASSPHRASE.trim()}`
     : signatureString;
 
   data.signature = md5(fullString);
@@ -60,14 +60,15 @@ export function validatePayFastSignature(
   if (!receivedSignature) return false;
 
   // Rebuild param string: all params except 'signature', sorted alphabetically
+  // Use RAW values, not encoded
   const paramString = Object.keys(payload)
     .filter((key) => key !== "signature")
     .sort()
-    .map((key) => `${key}=${encodeURIComponent(payload[key]).replace(/%20/g, "+")}`)
+    .map((key) => `${key}=${(payload[key] ?? "").trim()}`)
     .join("&");
 
   const fullString = env.PAYFAST_PASSPHRASE
-    ? `${paramString}&passphrase=${encodeURIComponent(env.PAYFAST_PASSPHRASE).replace(/%20/g, "+")}`
+    ? `${paramString}&passphrase=${env.PAYFAST_PASSPHRASE.trim()}`
     : paramString;
 
   const computedSignature = md5(fullString);
