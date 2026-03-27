@@ -13,7 +13,7 @@ import {
   signQuoteToken,
   verifyQuoteToken,
 } from "../services/quote.service.js";
-import { buildPayFastUrl } from "../services/payfast.service.js";
+import { buildPayFastFormData } from "../services/payfast.service.js";
 import { generateTrackingNumber } from "../utils/tracking.js";
 import { env } from "../lib/env.js";
 import { OrderStatus, PaymentStatus } from "@prisma/client";
@@ -91,9 +91,9 @@ router.post("/", authenticate, validate(createOrderSchema), async (req, res) => 
     },
   });
 
-  // Build PayFast redirect URL
+  // Build PayFast form data for POST submission
   const backendUrl = `${req.protocol}://${req.get("host")}`;
-  const paymentUrl = buildPayFastUrl({
+  const paymentData = buildPayFastFormData({
     orderId: order.id,
     amount: quoteData.amount,
     itemName: `AWDelivery ${trackingNumber}`,
@@ -104,7 +104,8 @@ router.post("/", authenticate, validate(createOrderSchema), async (req, res) => 
 
   res.status(201).json({
     order: formatOrder(order),
-    paymentUrl,
+    paymentUrl: paymentData.actionUrl,
+    paymentFormData: paymentData.formData,
   });
 });
 

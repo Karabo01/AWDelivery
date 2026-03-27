@@ -217,7 +217,21 @@ function NewOrderPage() {
         quoteToken,
       })
 
-      window.location.assign(created.paymentUrl)
+      // Submit payment via POST form
+      const paymentForm = document.createElement('form')
+      paymentForm.method = 'POST'
+      paymentForm.action = created.paymentUrl
+      
+      for (const [key, value] of Object.entries(created.paymentFormData)) {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = key
+        input.value = value
+        paymentForm.appendChild(input)
+      }
+      
+      document.body.appendChild(paymentForm)
+      paymentForm.submit()
     } catch {
       setServerError('Unable to create order. Please try again.')
     }

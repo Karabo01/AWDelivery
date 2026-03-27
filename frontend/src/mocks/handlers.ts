@@ -306,7 +306,14 @@ export const handlers: RequestHandler[] = [
 		return HttpResponse.json(
 			{
 				order,
-				paymentUrl: `https://sandbox.payfast.co.za/eng/process?tracking=${trackingNumber}`,
+				paymentUrl: `https://sandbox.payfast.co.za/eng/process`,
+				paymentFormData: {
+					merchant_id: '10047175',
+					merchant_key: 'test_key',
+					amount: (quoteAmount / 100).toFixed(2),
+					item_name: `AWDelivery ${trackingNumber}`,
+					signature: 'mock_signature',
+				},
 			},
 			{ status: 201 },
 		)

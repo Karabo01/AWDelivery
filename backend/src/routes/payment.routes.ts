@@ -5,7 +5,7 @@ import { authenticate } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { initiatePaymentSchema } from "../validation/schemas.js";
 import { AppError } from "../utils/errors.js";
-import { buildPayFastUrl, validatePayFastSignature } from "../services/payfast.service.js";
+import { buildPayFastFormData, validatePayFastSignature } from "../services/payfast.service.js";
 import { sendWhatsAppMessage } from "../services/whatsapp.service.js";
 import { OrderStatus, PaymentStatus } from "@prisma/client";
 
@@ -46,7 +46,7 @@ router.post("/initiate", authenticate, validate(initiatePaymentSchema), async (r
   }
 
   const backendUrl = `${req.protocol}://${req.get("host")}`;
-  const redirectUrl = buildPayFastUrl({
+  const paymentData = buildPayFastFormData({
     orderId: order.id,
     amount: order.quoteAmount,
     itemName: `AWDelivery ${order.trackingNumber}`,
@@ -55,7 +55,10 @@ router.post("/initiate", authenticate, validate(initiatePaymentSchema), async (r
     notifyUrl: `${backendUrl}/api/payments/webhook`,
   });
 
-  res.json({ redirectUrl });
+  res.json({ 
+    redirectUrl: paymentData.actionUrl,
+    formData: paymentData.formData,
+  });
 });
 
 // ─── POST /payments/webhook (PayFast ITN) ────────────────────────────────────

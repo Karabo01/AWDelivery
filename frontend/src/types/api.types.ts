@@ -70,6 +70,7 @@ export interface CreateOrderRequest {
 export interface CreateOrderResponse {
   readonly order: Order
   readonly paymentUrl: string
+  readonly paymentFormData: Record<string, string>
 }
 
 export interface TrackOrderResponse {

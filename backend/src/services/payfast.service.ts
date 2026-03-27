@@ -49,14 +49,17 @@ function generateSignature(
 }
 
 /**
- * Build a PayFast redirect URL with all required parameters.
+ * Build PayFast payment data for form submission (POST method).
  * 
  * This function:
  * 1. Builds the data object with all transaction fields
  * 2. Generates a signature using alphabetically sorted keys
- * 3. Returns a complete URL for redirecting the user to PayFast
+ * 3. Returns the form data and action URL for POST submission
  */
-export function buildPayFastUrl(params: PaymentParams): string {
+export function buildPayFastFormData(params: PaymentParams): {
+  actionUrl: string;
+  formData: Record<string, string>;
+} {
   // Format amount to 2 decimal places (PayFast expects Rands, not cents)
   const amountInRands = (params.amount / 100).toFixed(2);
 
@@ -77,19 +80,26 @@ export function buildPayFastUrl(params: PaymentParams): string {
   const passPhrase = env.PAYFAST_PASSPHRASE || null;
   const signature = generateSignature(data, passPhrase);
 
-  // Add signature to the data
-  const urlData: Record<string, string> = {
+  // Add signature to form data
+  const formData: Record<string, string> = {
     ...data,
     signature,
   };
 
-  // Build the final URL
-  const baseUrl = env.PAYFAST_SANDBOX ? SANDBOX_URL : LIVE_URL;
-  const queryString = Object.entries(urlData)
+  const actionUrl = env.PAYFAST_SANDBOX ? SANDBOX_URL : LIVE_URL;
+
+  return { actionUrl, formData };
+}
+
+/**
+ * Build a PayFast redirect URL with all required parameters (GET method - legacy).
+ */
+export function buildPayFastUrl(params: PaymentParams): string {
+  const { actionUrl, formData } = buildPayFastFormData(params);
+  const queryString = Object.entries(formData)
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
     .join("&");
-
-  return `${baseUrl}?${queryString}`;
+  return `${actionUrl}?${queryString}`;
 }
 
 /**
