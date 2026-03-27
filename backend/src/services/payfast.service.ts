@@ -19,7 +19,7 @@ interface PaymentParams {
 export function buildPayFastUrl(params: PaymentParams): string {
   const amountInRands = (params.amount / 100).toFixed(2);
 
-  // Build signature string in EXACT order required by PayFast (not alphabetical!)
+  // Build signature string in EXACT order required by PayFast
   const signatureString = [
     `merchant_id=${env.PAYFAST_MERCHANT_ID.trim()}`,
     `merchant_key=${env.PAYFAST_MERCHANT_KEY.trim()}`,
@@ -27,22 +27,7 @@ export function buildPayFastUrl(params: PaymentParams): string {
     `item_name=${params.itemName.trim()}`,
   ].join("&");
 
-  // DEBUG: Log what we're hashing
-  console.log("[PayFast] Signature string:", signatureString);
-  console.log("[PayFast] Sandbox mode:", env.PAYFAST_SANDBOX);
-  console.log("[PayFast] Has passphrase:", !!env.PAYFAST_PASSPHRASE);
-
-  // In sandbox mode, don't use passphrase (sandbox doesn't support it)
-  const usePassphrase = !env.PAYFAST_SANDBOX && env.PAYFAST_PASSPHRASE;
-  
-  const fullString = usePassphrase
-    ? `${signatureString}&passphrase=${env.PAYFAST_PASSPHRASE.trim()}`
-    : signatureString;
-
-  console.log("[PayFast] Full string for MD5:", fullString);
-
-  const signature = md5(fullString);
-  console.log("[PayFast] Generated signature:", signature);
+  const signature = md5(signatureString);
 
   // All fields for the URL
   const urlData: Record<string, string> = {
@@ -71,17 +56,12 @@ export function validatePayFastSignature(
   if (!receivedSignature) return false;
 
   // Rebuild param string: all params except 'signature', sorted alphabetically
-  // Use RAW values, not encoded
   const paramString = Object.keys(payload)
     .filter((key) => key !== "signature")
     .sort()
     .map((key) => `${key}=${(payload[key] ?? "").trim()}`)
     .join("&");
 
-  const fullString = env.PAYFAST_PASSPHRASE
-    ? `${paramString}&passphrase=${env.PAYFAST_PASSPHRASE.trim()}`
-    : paramString;
-
-  const computedSignature = md5(fullString);
+  const computedSignature = md5(paramString);
   return computedSignature === receivedSignature;
 }
