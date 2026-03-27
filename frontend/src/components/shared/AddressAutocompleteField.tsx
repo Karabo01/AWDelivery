@@ -15,9 +15,7 @@ type AddressAutocompleteValue = {
 type AddressAutocompleteFieldProps = {
   id: string
   label: string
-  value: string
-  onInputChange: (value: string) => void
-  onAddressSelected: (address: AddressAutocompleteValue) => void
+  onAddressSelected: (address: AddressAutocompleteValue, formattedAddress: string) => void
 }
 
 let scriptLoadingPromise: Promise<void> | null = null
@@ -82,19 +80,17 @@ function extractAddressFromPlace(place: google.maps.places.Place): AddressAutoco
 function AddressAutocompleteField({
   id,
   label,
-  value,
-  onInputChange,
   onAddressSelected,
 }: AddressAutocompleteFieldProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const autocompleteRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null)
-  const callbacksRef = useRef({ onInputChange, onAddressSelected })
+  const callbacksRef = useRef({ onAddressSelected })
   const [isLoaded, setIsLoaded] = useState(false)
 
   // Keep callbacks ref up to date
   useEffect(() => {
-    callbacksRef.current = { onInputChange, onAddressSelected }
-  }, [onInputChange, onAddressSelected])
+    callbacksRef.current = { onAddressSelected }
+  }, [onAddressSelected])
 
   useEffect(() => {
     void ensureGoogleMapsPlacesLoaded()
@@ -134,9 +130,9 @@ function AddressAutocompleteField({
       })
 
       const extracted = extractAddressFromPlace(place)
-      console.log('[AddressAutocomplete] Place selected:', extracted)
-      callbacksRef.current.onInputChange(place.formattedAddress ?? extracted.street)
-      callbacksRef.current.onAddressSelected(extracted)
+      const formattedAddress = place.formattedAddress ?? extracted.street
+      console.log('[AddressAutocomplete] Place selected:', extracted, formattedAddress)
+      callbacksRef.current.onAddressSelected(extracted, formattedAddress)
     })
 
     containerRef.current.appendChild(autocomplete)
@@ -157,8 +153,6 @@ function AddressAutocompleteField({
         ref={containerRef}
         className="w-full [&>gmp-place-autocomplete]:w-full [&>gmp-place-autocomplete]:rounded-md [&>gmp-place-autocomplete]:border [&>gmp-place-autocomplete]:border-input [&>gmp-place-autocomplete]:bg-background [&>gmp-place-autocomplete]:px-3 [&>gmp-place-autocomplete]:py-2 [&>gmp-place-autocomplete]:text-sm [&>gmp-place-autocomplete]:ring-offset-background [&>gmp-place-autocomplete]:placeholder:text-muted-foreground [&>gmp-place-autocomplete]:focus-within:outline-none [&>gmp-place-autocomplete]:focus-within:ring-2 [&>gmp-place-autocomplete]:focus-within:ring-ring [&>gmp-place-autocomplete]:focus-within:ring-offset-2"
       />
-      {/* Hidden input for form value tracking */}
-      <input type="hidden" id={id} value={value} />
     </div>
   )
 }

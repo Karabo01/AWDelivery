@@ -22,21 +22,15 @@ import { createOrder, getQuote } from '@/services/orders.service'
 import { ParcelSize } from '@/types'
 
 const wizardSchema = z.object({
-  pickupStreet: z.string().min(2, 'Pickup street is required.'),
-  pickupSuburb: z.string().min(2, 'Pickup suburb is required.'),
-  pickupCity: z.string().min(2, 'Pickup city is required.'),
-  pickupPostalCode: z.string().min(2, 'Pickup postal code is required.'),
-  pickupProvince: z.string().min(2, 'Pickup province is required.'),
-  pickupLat: z.number(),
+  // Pickup - simplified to just address string and coordinates
+  pickupAddress: z.string().min(5, 'Please select a pickup address.'),
+  pickupLat: z.number().refine((v) => v !== 0, 'Please select a valid pickup address.'),
   pickupLng: z.number(),
   pickupNotes: z.string().optional(),
 
-  deliveryStreet: z.string().min(2, 'Delivery street is required.'),
-  deliverySuburb: z.string().min(2, 'Delivery suburb is required.'),
-  deliveryCity: z.string().min(2, 'Delivery city is required.'),
-  deliveryPostalCode: z.string().min(2, 'Delivery postal code is required.'),
-  deliveryProvince: z.string().min(2, 'Delivery province is required.'),
-  deliveryLat: z.number(),
+  // Delivery - simplified to just address string and coordinates
+  deliveryAddress: z.string().min(5, 'Please select a delivery address.'),
+  deliveryLat: z.number().refine((v) => v !== 0, 'Please select a valid delivery address.'),
   deliveryLng: z.number(),
   deliveryNotes: z.string().optional(),
 
@@ -76,8 +70,6 @@ const parcelOptions = [
 
 function NewOrderPage() {
   const [step, setStep] = useState<Step>(1)
-  const [pickupQuery, setPickupQuery] = useState('')
-  const [deliveryQuery, setDeliveryQuery] = useState('')
   const [quoteToken, setQuoteToken] = useState<string | null>(null)
   const [quoteAmount, setQuoteAmount] = useState<number | null>(null)
   const [quoteDistanceKm, setQuoteDistanceKm] = useState<number | null>(null)
@@ -86,20 +78,12 @@ function NewOrderPage() {
   const form = useForm<WizardFormInput, unknown, WizardFormOutput>({
     resolver: zodResolver(wizardSchema),
     defaultValues: {
-      pickupStreet: '',
-      pickupSuburb: '',
-      pickupCity: '',
-      pickupPostalCode: '',
-      pickupProvince: 'Gauteng',
+      pickupAddress: '',
       pickupLat: 0,
       pickupLng: 0,
       pickupNotes: '',
 
-      deliveryStreet: '',
-      deliverySuburb: '',
-      deliveryCity: '',
-      deliveryPostalCode: '',
-      deliveryProvince: 'Gauteng',
+      deliveryAddress: '',
       deliveryLat: 0,
       deliveryLng: 0,
       deliveryNotes: '',
@@ -132,27 +116,16 @@ function NewOrderPage() {
   const applyAddressToForm = (
     prefix: 'pickup' | 'delivery',
     address: AddressAutocompleteValue,
+    formattedAddress: string,
   ) => {
-    form.setValue(`${prefix}Street`, address.street, { shouldValidate: true })
-    form.setValue(`${prefix}Suburb`, address.suburb, { shouldValidate: true })
-    form.setValue(`${prefix}City`, address.city, { shouldValidate: true })
-    form.setValue(`${prefix}PostalCode`, address.postalCode, { shouldValidate: true })
-    form.setValue(`${prefix}Province`, address.province || 'Gauteng', {
-      shouldValidate: true,
-    })
+    form.setValue(`${prefix}Address`, formattedAddress, { shouldValidate: true })
     form.setValue(`${prefix}Lat`, address.lat ?? 0, { shouldValidate: true })
     form.setValue(`${prefix}Lng`, address.lng ?? 0, { shouldValidate: true })
   }
 
   const goToStep2 = async () => {
     setServerError(null)
-    const valid = await form.trigger([
-      'pickupStreet',
-      'pickupSuburb',
-      'pickupCity',
-      'pickupPostalCode',
-      'pickupProvince',
-    ])
+    const valid = await form.trigger(['pickupAddress', 'pickupLat'])
 
     if (valid) {
       setStep(2)
@@ -162,11 +135,8 @@ function NewOrderPage() {
   const fetchQuoteAndGoToStep3 = async () => {
     setServerError(null)
     const valid = await form.trigger([
-      'deliveryStreet',
-      'deliverySuburb',
-      'deliveryCity',
-      'deliveryPostalCode',
-      'deliveryProvince',
+      'deliveryAddress',
+      'deliveryLat',
       'parcelSize',
       'parcelWeightKg',
       'receiverPhone',
@@ -180,20 +150,20 @@ function NewOrderPage() {
       const values = form.getValues()
       const quote = await quoteMutation.mutateAsync({
         pickupAddress: {
-          street: values.pickupStreet,
-          suburb: values.pickupSuburb,
-          city: values.pickupCity,
-          postalCode: values.pickupPostalCode,
-          province: values.pickupProvince,
+          street: values.pickupAddress,
+          suburb: '',
+          city: '',
+          postalCode: '',
+          province: '',
           notes: values.pickupNotes,
           coordinates: { lat: values.pickupLat, lng: values.pickupLng },
         },
         deliveryAddress: {
-          street: values.deliveryStreet,
-          suburb: values.deliverySuburb,
-          city: values.deliveryCity,
-          postalCode: values.deliveryPostalCode,
-          province: values.deliveryProvince,
+          street: values.deliveryAddress,
+          suburb: '',
+          city: '',
+          postalCode: '',
+          province: '',
           notes: values.deliveryNotes,
           coordinates: { lat: values.deliveryLat, lng: values.deliveryLng },
         },
@@ -219,20 +189,20 @@ function NewOrderPage() {
       const values = form.getValues()
       const created = await createOrderMutation.mutateAsync({
         pickupAddress: {
-          street: values.pickupStreet,
-          suburb: values.pickupSuburb,
-          city: values.pickupCity,
-          postalCode: values.pickupPostalCode,
-          province: values.pickupProvince,
+          street: values.pickupAddress,
+          suburb: '',
+          city: '',
+          postalCode: '',
+          province: '',
           notes: values.pickupNotes,
           coordinates: { lat: values.pickupLat, lng: values.pickupLng },
         },
         deliveryAddress: {
-          street: values.deliveryStreet,
-          suburb: values.deliverySuburb,
-          city: values.deliveryCity,
-          postalCode: values.deliveryPostalCode,
-          province: values.deliveryProvince,
+          street: values.deliveryAddress,
+          suburb: '',
+          city: '',
+          postalCode: '',
+          province: '',
           notes: values.deliveryNotes,
           coordinates: { lat: values.deliveryLat, lng: values.deliveryLng },
         },
@@ -268,40 +238,19 @@ function NewOrderPage() {
           <CardHeader>
             <CardTitle>Step 1: Pickup address</CardTitle>
             <CardDescription>
-              Use Google Places Autocomplete, then add optional landmark notes.
+              Search for the pickup location, then add optional landmark notes.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <AddressAutocompleteField
               id="pickup-address"
               label="Pickup address"
-              value={pickupQuery}
-              onInputChange={setPickupQuery}
-              onAddressSelected={(address) => applyAddressToForm('pickup', address)}
+              onAddressSelected={(address, formattedAddress) => applyAddressToForm('pickup', address, formattedAddress)}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Street</Label>
-                <Input {...form.register('pickupStreet')} />
-              </div>
-              <div className="space-y-2">
-                <Label>Suburb</Label>
-                <Input {...form.register('pickupSuburb')} />
-              </div>
-              <div className="space-y-2">
-                <Label>City</Label>
-                <Input {...form.register('pickupCity')} />
-              </div>
-              <div className="space-y-2">
-                <Label>Postal code</Label>
-                <Input {...form.register('pickupPostalCode')} />
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <Label>Landmark / notes</Label>
-              <Textarea {...form.register('pickupNotes')} />
+              <Label>Landmark / notes (optional)</Label>
+              <Textarea placeholder="e.g. Gate code 1234, blue building on the left" {...form.register('pickupNotes')} />
             </div>
 
             <div className="flex justify-end pt-2">
@@ -316,35 +265,19 @@ function NewOrderPage() {
           <CardHeader>
             <CardTitle>Step 2: Delivery and parcel details</CardTitle>
             <CardDescription>
-              Add delivery details, select parcel size, and receiver phone.
+              Search for the delivery location, select parcel size, and enter receiver phone.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <AddressAutocompleteField
               id="delivery-address"
               label="Delivery address"
-              value={deliveryQuery}
-              onInputChange={setDeliveryQuery}
-              onAddressSelected={(address) => applyAddressToForm('delivery', address)}
+              onAddressSelected={(address, formattedAddress) => applyAddressToForm('delivery', address, formattedAddress)}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Street</Label>
-                <Input {...form.register('deliveryStreet')} />
-              </div>
-              <div className="space-y-2">
-                <Label>Suburb</Label>
-                <Input {...form.register('deliverySuburb')} />
-              </div>
-              <div className="space-y-2">
-                <Label>City</Label>
-                <Input {...form.register('deliveryCity')} />
-              </div>
-              <div className="space-y-2">
-                <Label>Postal code</Label>
-                <Input {...form.register('deliveryPostalCode')} />
-              </div>
+            <div className="space-y-2">
+              <Label>Delivery notes (optional)</Label>
+              <Textarea placeholder="e.g. Leave at reception, call on arrival" {...form.register('deliveryNotes')} />
             </div>
 
             <div className="space-y-2">
