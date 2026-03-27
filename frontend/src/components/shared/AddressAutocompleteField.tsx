@@ -121,18 +121,27 @@ function AddressAutocompleteField({
 
     // Listen for place selection
     autocomplete.addEventListener('gmp-placeselect', async (event) => {
-      const placeEvent = event as google.maps.places.PlaceAutocompletePlaceSelectEvent
-      const place = placeEvent.place
+      console.log('[AddressAutocomplete] gmp-placeselect event fired')
+      try {
+        const placeEvent = event as google.maps.places.PlaceAutocompletePlaceSelectEvent
+        const place = placeEvent.place
+        console.log('[AddressAutocomplete] Place object:', place)
 
-      // Fetch full place details
-      await place.fetchFields({
-        fields: ['addressComponents', 'formattedAddress', 'location'],
-      })
+        // Fetch full place details
+        await place.fetchFields({
+          fields: ['addressComponents', 'formattedAddress', 'location'],
+        })
+        console.log('[AddressAutocomplete] fetchFields completed')
+        console.log('[AddressAutocomplete] location:', place.location)
+        console.log('[AddressAutocomplete] formattedAddress:', place.formattedAddress)
 
-      const extracted = extractAddressFromPlace(place)
-      const formattedAddress = place.formattedAddress ?? extracted.street
-      console.log('[AddressAutocomplete] Place selected:', extracted, formattedAddress)
-      callbacksRef.current.onAddressSelected(extracted, formattedAddress)
+        const extracted = extractAddressFromPlace(place)
+        const formattedAddress = place.formattedAddress ?? extracted.street
+        console.log('[AddressAutocomplete] Calling onAddressSelected with:', extracted, formattedAddress)
+        callbacksRef.current.onAddressSelected(extracted, formattedAddress)
+      } catch (error) {
+        console.error('[AddressAutocomplete] Error in gmp-placeselect handler:', error)
+      }
     })
 
     containerRef.current.appendChild(autocomplete)

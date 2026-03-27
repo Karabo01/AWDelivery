@@ -118,9 +118,11 @@ function NewOrderPage() {
     address: AddressAutocompleteValue,
     formattedAddress: string,
   ) => {
+    console.log(`[NewOrderPage] applyAddressToForm called for ${prefix}:`, { address, formattedAddress })
     form.setValue(`${prefix}Address`, formattedAddress, { shouldValidate: true })
     form.setValue(`${prefix}Lat`, address.lat ?? 0, { shouldValidate: true })
     form.setValue(`${prefix}Lng`, address.lng ?? 0, { shouldValidate: true })
+    console.log(`[NewOrderPage] Form values after setting:`, form.getValues())
   }
 
   const goToStep2 = async () => {
