@@ -83,7 +83,13 @@ function AddressAutocompleteField({
 }: AddressAutocompleteFieldProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const autocompleteRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null)
+  const callbacksRef = useRef({ onInputChange, onAddressSelected })
   const [isLoaded, setIsLoaded] = useState(false)
+
+  // Keep callbacks ref up to date
+  useEffect(() => {
+    callbacksRef.current = { onInputChange, onAddressSelected }
+  }, [onInputChange, onAddressSelected])
 
   useEffect(() => {
     void ensureGoogleMapsPlacesLoaded()
@@ -123,8 +129,9 @@ function AddressAutocompleteField({
       })
 
       const extracted = extractAddressFromPlace(place)
-      onInputChange(place.formattedAddress ?? extracted.street)
-      onAddressSelected(extracted)
+      console.log('[AddressAutocomplete] Place selected:', extracted)
+      callbacksRef.current.onInputChange(place.formattedAddress ?? extracted.street)
+      callbacksRef.current.onAddressSelected(extracted)
     })
 
     containerRef.current.appendChild(autocomplete)
@@ -136,7 +143,7 @@ function AddressAutocompleteField({
         autocompleteRef.current = null
       }
     }
-  }, [isLoaded, onAddressSelected, onInputChange])
+  }, [isLoaded])
 
   return (
     <div className="space-y-2.5">
