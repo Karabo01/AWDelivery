@@ -13,10 +13,10 @@ export const coordinatesSchema = z.object({
 
 export const addressSchema = z.object({
   street: z.string().min(1),
-  suburb: z.string().optional().default(''),
-  city: z.string().optional().default(''),
-  postalCode: z.string().optional().default(''),
-  province: z.string().optional().default(''),
+  suburb: z.string(),
+  city: z.string(),
+  postalCode: z.string(),
+  province: z.string(),
   coordinates: coordinatesSchema,
   notes: z.string().optional(),
 });
