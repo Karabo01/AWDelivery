@@ -19,15 +19,12 @@ interface PaymentParams {
 export function buildPayFastUrl(params: PaymentParams): string {
   const amountInRands = (params.amount / 100).toFixed(2);
 
-  // URL encode values and replace %20 with + (PayFast requirement)
-  const encode = (val: string) => encodeURIComponent(val.trim()).replace(/%20/g, "+");
-
-  // Build signature string in EXACT order required by PayFast
+  // Build signature string with RAW values (no URL encoding)
   const signatureString = [
-    `merchant_id=${encode(env.PAYFAST_MERCHANT_ID)}`,
-    `merchant_key=${encode(env.PAYFAST_MERCHANT_KEY)}`,
-    `amount=${encode(amountInRands)}`,
-    `item_name=${encode(params.itemName)}`,
+    `merchant_id=${env.PAYFAST_MERCHANT_ID.trim()}`,
+    `merchant_key=${env.PAYFAST_MERCHANT_KEY.trim()}`,
+    `amount=${amountInRands}`,
+    `item_name=${params.itemName.trim()}`,
   ].join("&");
 
   const signature = md5(signatureString);
