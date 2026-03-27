@@ -27,11 +27,22 @@ export function buildPayFastUrl(params: PaymentParams): string {
     `item_name=${params.itemName.trim()}`,
   ].join("&");
 
-  const fullString = env.PAYFAST_PASSPHRASE
+  // DEBUG: Log what we're hashing
+  console.log("[PayFast] Signature string:", signatureString);
+  console.log("[PayFast] Sandbox mode:", env.PAYFAST_SANDBOX);
+  console.log("[PayFast] Has passphrase:", !!env.PAYFAST_PASSPHRASE);
+
+  // In sandbox mode, don't use passphrase (sandbox doesn't support it)
+  const usePassphrase = !env.PAYFAST_SANDBOX && env.PAYFAST_PASSPHRASE;
+  
+  const fullString = usePassphrase
     ? `${signatureString}&passphrase=${env.PAYFAST_PASSPHRASE.trim()}`
     : signatureString;
 
+  console.log("[PayFast] Full string for MD5:", fullString);
+
   const signature = md5(fullString);
+  console.log("[PayFast] Generated signature:", signature);
 
   // All fields for the URL
   const urlData: Record<string, string> = {
