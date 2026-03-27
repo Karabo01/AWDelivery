@@ -29,7 +29,7 @@ export function buildPayFastUrl(params: PaymentParams): string {
 
   const signature = md5(signatureString);
 
-  // All fields for the URL
+  // All fields for the URL - NO encoding, PayFast expects raw values
   const urlData: Record<string, string> = {
     merchant_id: env.PAYFAST_MERCHANT_ID,
     merchant_key: env.PAYFAST_MERCHANT_KEY,
@@ -40,7 +40,7 @@ export function buildPayFastUrl(params: PaymentParams): string {
 
   const baseUrl = env.PAYFAST_SANDBOX ? SANDBOX_URL : LIVE_URL;
   const queryString = Object.entries(urlData)
-    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .map(([k, v]) => `${k}=${v}`)
     .join("&");
 
   return `${baseUrl}?${queryString}`;
