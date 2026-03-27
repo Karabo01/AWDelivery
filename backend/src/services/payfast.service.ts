@@ -19,19 +19,13 @@ interface PaymentParams {
 export function buildPayFastUrl(params: PaymentParams): string {
   const amountInRands = (params.amount / 100).toFixed(2);
 
-  // Only these 4 fields are used for signature generation
-  const signatureData: Record<string, string> = {
-    merchant_id: env.PAYFAST_MERCHANT_ID,
-    merchant_key: env.PAYFAST_MERCHANT_KEY,
-    amount: amountInRands,
-    item_name: params.itemName,
-  };
-
-  // Build signature string (alphabetical by key) - use RAW values, not encoded
-  const signatureString = Object.keys(signatureData)
-    .sort()
-    .map((key) => `${key}=${signatureData[key].trim()}`)
-    .join("&");
+  // Build signature string in EXACT order required by PayFast (not alphabetical!)
+  const signatureString = [
+    `merchant_id=${env.PAYFAST_MERCHANT_ID.trim()}`,
+    `merchant_key=${env.PAYFAST_MERCHANT_KEY.trim()}`,
+    `amount=${amountInRands}`,
+    `item_name=${params.itemName.trim()}`,
+  ].join("&");
 
   const fullString = env.PAYFAST_PASSPHRASE
     ? `${signatureString}&passphrase=${env.PAYFAST_PASSPHRASE.trim()}`
@@ -39,7 +33,7 @@ export function buildPayFastUrl(params: PaymentParams): string {
 
   const signature = md5(fullString);
 
-  // All fields for the URL (including the ones not in signature)
+  // All fields for the URL
   const urlData: Record<string, string> = {
     merchant_id: env.PAYFAST_MERCHANT_ID,
     merchant_key: env.PAYFAST_MERCHANT_KEY,
