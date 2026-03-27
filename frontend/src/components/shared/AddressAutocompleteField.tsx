@@ -50,6 +50,8 @@ function ensureGoogleMapsPlacesLoaded() {
 
 function extractAddressFromPlace(place: google.maps.places.Place): AddressAutocompleteValue {
   const components = place.addressComponents ?? []
+  
+  console.log('[AddressAutocomplete] Raw addressComponents:', components)
 
   const findComponent = (...types: string[]) =>
     components.find((component) =>
@@ -63,7 +65,7 @@ function extractAddressFromPlace(place: google.maps.places.Place): AddressAutoco
   const province = findComponent('administrative_area_level_1')?.longText ?? ''
   const postalCode = findComponent('postal_code')?.longText ?? ''
 
-  return {
+  const result = {
     street: `${streetNumber} ${route}`.trim(),
     suburb,
     city,
@@ -72,6 +74,9 @@ function extractAddressFromPlace(place: google.maps.places.Place): AddressAutoco
     lat: place.location?.lat() ?? null,
     lng: place.location?.lng() ?? null,
   }
+  
+  console.log('[AddressAutocomplete] Extracted address:', result)
+  return result
 }
 
 function AddressAutocompleteField({
