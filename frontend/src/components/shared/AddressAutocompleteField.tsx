@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 type AddressAutocompleteValue = {
@@ -20,12 +21,12 @@ type AddressAutocompleteFieldProps = {
 
 let scriptLoadingPromise: Promise<void> | null = null
 
-function ensureGoogleMapsPlacesLoaded() {
+function ensureGoogleMapsLoaded() {
   if (typeof window === 'undefined') {
     return Promise.resolve()
   }
 
-  if (typeof google !== 'undefined' && google.maps?.places?.PlaceAutocompleteElement) {
+  if (typeof google !== 'undefined' && google.maps?.places?.Autocomplete) {
     return Promise.resolve()
   }
 
@@ -33,8 +34,7 @@ function ensureGoogleMapsPlacesLoaded() {
     scriptLoadingPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script')
       const key = import.meta.env.VITE_GOOGLE_MAPS_KEY
-      // Use the new Places API
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&loading=async`
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`
       script.async = true
       script.defer = true
       script.onload = () => resolve()
@@ -46,35 +46,30 @@ function ensureGoogleMapsPlacesLoaded() {
   return scriptLoadingPromise
 }
 
-function extractAddressFromPlace(place: google.maps.places.Place): AddressAutocompleteValue {
-  const components = place.addressComponents ?? []
-  
-  console.log('[AddressAutocomplete] Raw addressComponents:', components)
+function extractAddressFromPlace(place: google.maps.places.PlaceResult): AddressAutocompleteValue {
+  const components = place.address_components ?? []
 
   const findComponent = (...types: string[]) =>
     components.find((component) =>
       types.some((type) => component.types.includes(type)),
     )
 
-  const streetNumber = findComponent('street_number')?.longText ?? ''
-  const route = findComponent('route')?.longText ?? ''
-  const suburb = findComponent('sublocality_level_1', 'sublocality', 'neighborhood')?.longText ?? ''
-  const city = findComponent('locality', 'administrative_area_level_2')?.longText ?? ''
-  const province = findComponent('administrative_area_level_1')?.longText ?? ''
-  const postalCode = findComponent('postal_code')?.longText ?? ''
+  const streetNumber = findComponent('street_number')?.long_name ?? ''
+  const route = findComponent('route')?.long_name ?? ''
+  const suburb = findComponent('sublocality_level_1', 'sublocality', 'neighborhood')?.long_name ?? ''
+  const city = findComponent('locality', 'administrative_area_level_2')?.long_name ?? ''
+  const province = findComponent('administrative_area_level_1')?.long_name ?? ''
+  const postalCode = findComponent('postal_code')?.long_name ?? ''
 
-  const result = {
+  return {
     street: `${streetNumber} ${route}`.trim(),
     suburb,
     city,
     postalCode,
     province,
-    lat: place.location?.lat() ?? null,
-    lng: place.location?.lng() ?? null,
+    lat: place.geometry?.location?.lat() ?? null,
+    lng: place.geometry?.location?.lng() ?? null,
   }
-  
-  console.log('[AddressAutocomplete] Extracted address:', result)
-  return result
 }
 
 function AddressAutocompleteField({
@@ -82,8 +77,8 @@ function AddressAutocompleteField({
   label,
   onAddressSelected,
 }: AddressAutocompleteFieldProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const autocompleteRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
   const callbacksRef = useRef({ onAddressSelected })
   const [isLoaded, setIsLoaded] = useState(false)
 
@@ -93,7 +88,7 @@ function AddressAutocompleteField({
   }, [onAddressSelected])
 
   useEffect(() => {
-    void ensureGoogleMapsPlacesLoaded()
+    void ensureGoogleMapsLoaded()
       .then(() => {
         setIsLoaded(true)
       })
@@ -101,66 +96,60 @@ function AddressAutocompleteField({
   }, [])
 
   useEffect(() => {
-    if (!isLoaded || !containerRef.current || autocompleteRef.current) {
+    if (!isLoaded || !inputRef.current || autocompleteRef.current) {
       return
     }
 
-    if (typeof google === 'undefined' || !google.maps?.places?.PlaceAutocompleteElement) {
+    if (typeof google === 'undefined' || !google.maps?.places?.Autocomplete) {
+      console.error('[AddressAutocomplete] Google Maps Autocomplete not available')
       return
     }
 
-    // Create the PlaceAutocompleteElement
-    const autocomplete = new google.maps.places.PlaceAutocompleteElement({
+    console.log('[AddressAutocomplete] Initializing Autocomplete')
+    
+    const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
       componentRestrictions: { country: 'za' },
+      fields: ['address_components', 'formatted_address', 'geometry'],
     })
 
-    // Style the element to match our design
-    autocomplete.style.width = '100%'
-    autocomplete.style.height = '40px'
-    autocomplete.style.fontSize = '14px'
+    autocomplete.addListener('place_changed', () => {
+      console.log('[AddressAutocomplete] place_changed event fired')
+      const place = autocomplete.getPlace()
+      console.log('[AddressAutocomplete] Place:', place)
 
-    // Listen for place selection
-    autocomplete.addEventListener('gmp-placeselect', async (event) => {
-      console.log('[AddressAutocomplete] gmp-placeselect event fired')
-      try {
-        const placeEvent = event as google.maps.places.PlaceAutocompletePlaceSelectEvent
-        const place = placeEvent.place
-        console.log('[AddressAutocomplete] Place object:', place)
-
-        // Fetch full place details
-        await place.fetchFields({
-          fields: ['addressComponents', 'formattedAddress', 'location'],
-        })
-        console.log('[AddressAutocomplete] fetchFields completed')
-        console.log('[AddressAutocomplete] location:', place.location)
-        console.log('[AddressAutocomplete] formattedAddress:', place.formattedAddress)
-
-        const extracted = extractAddressFromPlace(place)
-        const formattedAddress = place.formattedAddress ?? extracted.street
-        console.log('[AddressAutocomplete] Calling onAddressSelected with:', extracted, formattedAddress)
-        callbacksRef.current.onAddressSelected(extracted, formattedAddress)
-      } catch (error) {
-        console.error('[AddressAutocomplete] Error in gmp-placeselect handler:', error)
+      if (!place.geometry) {
+        console.warn('[AddressAutocomplete] No geometry in place result')
+        return
       }
+
+      const extracted = extractAddressFromPlace(place)
+      const formattedAddress = place.formatted_address ?? extracted.street
+      console.log('[AddressAutocomplete] Extracted:', extracted)
+      console.log('[AddressAutocomplete] Formatted address:', formattedAddress)
+      
+      callbacksRef.current.onAddressSelected(extracted, formattedAddress)
     })
 
-    containerRef.current.appendChild(autocomplete)
     autocompleteRef.current = autocomplete
+    console.log('[AddressAutocomplete] Autocomplete initialized successfully')
 
     return () => {
-      if (autocompleteRef.current && containerRef.current) {
-        containerRef.current.removeChild(autocompleteRef.current)
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current)
         autocompleteRef.current = null
       }
     }
   }, [isLoaded])
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <div
-        ref={containerRef}
-        className="w-full [&>gmp-place-autocomplete]:w-full [&>gmp-place-autocomplete]:rounded-md [&>gmp-place-autocomplete]:border [&>gmp-place-autocomplete]:border-input [&>gmp-place-autocomplete]:bg-background [&>gmp-place-autocomplete]:px-3 [&>gmp-place-autocomplete]:py-2 [&>gmp-place-autocomplete]:text-sm [&>gmp-place-autocomplete]:ring-offset-background [&>gmp-place-autocomplete]:placeholder:text-muted-foreground [&>gmp-place-autocomplete]:focus-within:outline-none [&>gmp-place-autocomplete]:focus-within:ring-2 [&>gmp-place-autocomplete]:focus-within:ring-ring [&>gmp-place-autocomplete]:focus-within:ring-offset-2"
+      <Input
+        ref={inputRef}
+        id={id}
+        type="text"
+        placeholder="Start typing an address..."
+        autoComplete="off"
       />
     </div>
   )
