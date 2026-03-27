@@ -43,10 +43,6 @@ export function buildPayFastUrl(params: PaymentParams): string {
   const urlData: Record<string, string> = {
     merchant_id: env.PAYFAST_MERCHANT_ID,
     merchant_key: env.PAYFAST_MERCHANT_KEY,
-    return_url: params.returnUrl,
-    cancel_url: params.cancelUrl,
-    notify_url: params.notifyUrl,
-    m_payment_id: params.orderId,
     amount: amountInRands,
     item_name: params.itemName,
     signature,
