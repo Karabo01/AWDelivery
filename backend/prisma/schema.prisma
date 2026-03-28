@@ -42,6 +42,13 @@ enum WhatsappTemplateType {
   DRIVER_ASSIGNMENT
 }
 
+enum VehicleType {
+  MOTORCYCLE
+  CAR
+  VAN
+  TRUCK
+}
+
 model User {
   id             String   @id @default(uuid()) @db.Uuid
   phone          String   @unique
@@ -59,10 +66,27 @@ model User {
   @@map("users")
 }
 
+model Driver {
+  id          String      @id @default(uuid()) @db.Uuid
+  name        String
+  phone       String      @unique
+  email       String?
+  vehicleType VehicleType
+  vehiclePlate String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  orders Order[]
+
+  @@map("drivers")
+}
+
 model Order {
   id              String        @id @default(uuid()) @db.Uuid
   trackingNumber  String        @unique
   senderId        String        @db.Uuid
+  driverId        String?       @db.Uuid
   pickupAddress   Json
   deliveryAddress Json
   parcelDetails   Json
@@ -74,6 +98,7 @@ model Order {
   updatedAt       DateTime      @updatedAt
 
   sender   User                 @relation(fields: [senderId], references: [id])
+  driver   Driver?              @relation(fields: [driverId], references: [id])
   timeline OrderTimelineEntry[]
   payments Payment[]
   whatsappLogs WhatsappLog[]

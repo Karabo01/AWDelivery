@@ -7,6 +7,10 @@ import {
   notifyOrderSchema,
   adminOrdersQuerySchema,
   adminUsersQuerySchema,
+  createDriverSchema,
+  updateDriverSchema,
+  assignDriverSchema,
+  adminDriversQuerySchema,
 } from "../validation/schemas.js";
 import { AppError } from "../utils/errors.js";
 import { isValidTransition } from "../utils/statusTransitions.js";
@@ -88,12 +92,13 @@ router.get("/orders", validateQuery(adminOrdersQuerySchema), async (req, res) =>
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
+      include: { driver: true },
     }),
     prisma.order.count({ where }),
   ]);
 
   res.json({
-    data: orders.map(formatOrder),
+    data: orders.map(formatOrderWithDriver),
     total,
     page,
     pageSize,
@@ -194,6 +199,225 @@ router.post(
   },
 );
 
+// ─── PATCH /admin/orders/:id/driver ──────────────────────────────────────────
+
+router.patch(
+  "/orders/:id/driver",
+  validate(assignDriverSchema),
+  async (req, res) => {
+    const id = req.params.id as string;
+    const { driverId } = req.body as { driverId: string | null };
+
+    const order = await prisma.order.findUnique({ where: { id } });
+
+    if (!order) {
+      throw new AppError("Order not found", "ORDER_NOT_FOUND", 404);
+    }
+
+    if (driverId) {
+      const driver = await prisma.driver.findUnique({ where: { id: driverId } });
+      if (!driver) {
+        throw new AppError("Driver not found", "DRIVER_NOT_FOUND", 404);
+      }
+      if (!driver.isActive) {
+        throw new AppError("Driver is not active", "DRIVER_INACTIVE", 400);
+      }
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id },
+      data: { driverId },
+      include: { driver: true },
+    });
+
+    res.json({ order: formatOrderWithDriver(updatedOrder) });
+  },
+);
+
+// ─── GET /admin/drivers ──────────────────────────────────────────────────────
+
+router.get("/drivers", validateQuery(adminDriversQuerySchema), async (req, res) => {
+  const { page, pageSize, isActive, search } = (req as any).validatedQuery;
+
+  const where: Prisma.DriverWhereInput = {};
+
+  if (isActive !== undefined) {
+    where.isActive = isActive;
+  }
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { phone: { contains: search } },
+      { vehiclePlate: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const [drivers, total] = await Promise.all([
+    prisma.driver.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { _count: { select: { orders: true } } },
+    }),
+    prisma.driver.count({ where }),
+  ]);
+
+  res.json({
+    data: drivers.map(formatDriver),
+    total,
+    page,
+    pageSize,
+  });
+});
+
+// ─── POST /admin/drivers ─────────────────────────────────────────────────────
+
+router.post("/drivers", validate(createDriverSchema), async (req, res) => {
+  const { name, phone, email, vehicleType, vehiclePlate } = req.body;
+
+  const existingDriver = await prisma.driver.findUnique({ where: { phone } });
+  if (existingDriver) {
+    throw new AppError("Driver with this phone already exists", "DRIVER_PHONE_EXISTS", 409);
+  }
+
+  const driver = await prisma.driver.create({
+    data: {
+      name,
+      phone,
+      email,
+      vehicleType,
+      vehiclePlate,
+    },
+  });
+
+  res.status(201).json({ driver: formatDriver(driver) });
+});
+
+// ─── PATCH /admin/drivers/:id ────────────────────────────────────────────────
+
+router.patch("/drivers/:id", validate(updateDriverSchema), async (req, res) => {
+  const id = req.params.id as string;
+  const updates = req.body;
+
+  const driver = await prisma.driver.findUnique({ where: { id } });
+  if (!driver) {
+    throw new AppError("Driver not found", "DRIVER_NOT_FOUND", 404);
+  }
+
+  if (updates.phone && updates.phone !== driver.phone) {
+    const existingDriver = await prisma.driver.findUnique({ where: { phone: updates.phone } });
+    if (existingDriver) {
+      throw new AppError("Driver with this phone already exists", "DRIVER_PHONE_EXISTS", 409);
+    }
+  }
+
+  const updatedDriver = await prisma.driver.update({
+    where: { id },
+    data: updates,
+  });
+
+  res.json({ driver: formatDriver(updatedDriver) });
+});
+
+// ─── DELETE /admin/drivers/:id ───────────────────────────────────────────────
+
+router.delete("/drivers/:id", async (req, res) => {
+  const id = req.params.id as string;
+
+  const driver = await prisma.driver.findUnique({
+    where: { id },
+    include: { _count: { select: { orders: true } } },
+  });
+
+  if (!driver) {
+    throw new AppError("Driver not found", "DRIVER_NOT_FOUND", 404);
+  }
+
+  if (driver._count.orders > 0) {
+    // Soft delete - just deactivate instead of deleting
+    const updatedDriver = await prisma.driver.update({
+      where: { id },
+      data: { isActive: false },
+    });
+    res.json({ driver: formatDriver(updatedDriver), message: "Driver deactivated (has order history)" });
+  } else {
+    await prisma.driver.delete({ where: { id } });
+    res.json({ message: "Driver deleted" });
+  }
+});
+
+// ─── GET /admin/stats ────────────────────────────────────────────────────────
+
+router.get("/stats", async (_req, res) => {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+  const [
+    totalOrders,
+    deliveredOrders,
+    pendingOrders,
+    totalRevenue,
+    monthlyOrders,
+    monthlyRevenue,
+    lastMonthRevenue,
+    activeDrivers,
+    totalDrivers,
+    ordersByStatus,
+  ] = await Promise.all([
+    prisma.order.count(),
+    prisma.order.count({ where: { status: "DELIVERED" } }),
+    prisma.order.count({ where: { status: { notIn: ["DELIVERED", "FAILED"] } } }),
+    prisma.order.aggregate({
+      where: { paymentStatus: "PAID" },
+      _sum: { quoteAmount: true },
+    }),
+    prisma.order.count({ where: { createdAt: { gte: startOfMonth } } }),
+    prisma.order.aggregate({
+      where: { paymentStatus: "PAID", createdAt: { gte: startOfMonth } },
+      _sum: { quoteAmount: true },
+    }),
+    prisma.order.aggregate({
+      where: {
+        paymentStatus: "PAID",
+        createdAt: { gte: startOfLastMonth, lte: endOfLastMonth },
+      },
+      _sum: { quoteAmount: true },
+    }),
+    prisma.driver.count({ where: { isActive: true } }),
+    prisma.driver.count(),
+    prisma.order.groupBy({
+      by: ["status"],
+      _count: { status: true },
+    }),
+  ]);
+
+  res.json({
+    orders: {
+      total: totalOrders,
+      delivered: deliveredOrders,
+      pending: pendingOrders,
+      thisMonth: monthlyOrders,
+    },
+    revenue: {
+      total: totalRevenue._sum.quoteAmount || 0,
+      thisMonth: monthlyRevenue._sum.quoteAmount || 0,
+      lastMonth: lastMonthRevenue._sum.quoteAmount || 0,
+    },
+    drivers: {
+      total: totalDrivers,
+      active: activeDrivers,
+    },
+    ordersByStatus: ordersByStatus.map((s) => ({
+      status: s.status,
+      count: s._count.status,
+    })),
+  });
+});
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatOrder(order: any) {
@@ -201,6 +425,7 @@ function formatOrder(order: any) {
     id: order.id,
     trackingNumber: order.trackingNumber,
     senderId: order.senderId,
+    driverId: order.driverId,
     pickupAddress: order.pickupAddress,
     deliveryAddress: order.deliveryAddress,
     parcelDetails: order.parcelDetails,
@@ -210,6 +435,28 @@ function formatOrder(order: any) {
     receiverPhone: order.receiverPhone,
     createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
     updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
+  };
+}
+
+function formatOrderWithDriver(order: any) {
+  return {
+    ...formatOrder(order),
+    driver: order.driver ? formatDriver(order.driver) : null,
+  };
+}
+
+function formatDriver(driver: any) {
+  return {
+    id: driver.id,
+    name: driver.name,
+    phone: driver.phone,
+    email: driver.email,
+    vehicleType: driver.vehicleType,
+    vehiclePlate: driver.vehiclePlate,
+    isActive: driver.isActive,
+    orderCount: driver._count?.orders ?? undefined,
+    createdAt: driver.createdAt instanceof Date ? driver.createdAt.toISOString() : driver.createdAt,
+    updatedAt: driver.updatedAt instanceof Date ? driver.updatedAt.toISOString() : driver.updatedAt,
   };
 }
 

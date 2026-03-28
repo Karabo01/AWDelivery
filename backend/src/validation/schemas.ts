@@ -134,3 +134,35 @@ export const adminUsersQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().optional(),
 });
+
+// ─── Drivers ─────────────────────────────────────────────────────────────────
+
+export const vehicleTypeSchema = z.enum(["MOTORCYCLE", "CAR", "VAN", "TRUCK"]);
+
+export const createDriverSchema = z.object({
+  name: z.string().min(1).max(100),
+  phone: phoneSchema,
+  email: z.string().email().max(255).optional(),
+  vehicleType: vehicleTypeSchema,
+  vehiclePlate: z.string().max(20).optional(),
+});
+
+export const updateDriverSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  phone: phoneSchema.optional(),
+  email: z.string().email().max(255).optional().nullable(),
+  vehicleType: vehicleTypeSchema.optional(),
+  vehiclePlate: z.string().max(20).optional().nullable(),
+  isActive: z.boolean().optional(),
+});
+
+export const assignDriverSchema = z.object({
+  driverId: z.string().uuid().nullable(),
+});
+
+export const adminDriversQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  isActive: z.coerce.boolean().optional(),
+  search: z.string().optional(),
+});

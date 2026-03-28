@@ -1,21 +1,50 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import DriversPage from './DriversPage'
+import OrdersPage from './OrdersPage'
+import FinancialsPage from './FinancialsPage'
+
+type Tab = 'orders' | 'drivers' | 'financials'
 
 function AdminPage() {
+  const [activeTab, setActiveTab] = useState<Tab>('orders')
+
   return (
     <div className="space-y-4 py-2">
       <div className="space-y-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Admin</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Admin Portal</h1>
         <p className="text-sm text-muted-foreground">Operations and oversight tools.</p>
       </div>
 
-      <Card className="border-border/85 bg-card/95">
-        <CardHeader>
-          <CardTitle>Dashboard</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          Admin dashboard placeholder.
-        </CardContent>
-      </Card>
+      <div className="flex gap-2 border-b pb-2">
+        <Button
+          variant={activeTab === 'orders' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setActiveTab('orders')}
+        >
+          Orders
+        </Button>
+        <Button
+          variant={activeTab === 'drivers' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setActiveTab('drivers')}
+        >
+          Drivers
+        </Button>
+        <Button
+          variant={activeTab === 'financials' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setActiveTab('financials')}
+        >
+          Financials
+        </Button>
+      </div>
+
+      <div className="pt-2">
+        {activeTab === 'orders' && <OrdersPage />}
+        {activeTab === 'drivers' && <DriversPage />}
+        {activeTab === 'financials' && <FinancialsPage />}
+      </div>
     </div>
   )
 }
