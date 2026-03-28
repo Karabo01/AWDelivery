@@ -16,7 +16,7 @@ interface PaymentParams {
 /**
  * Generate PayFast signature using their required format.
  * 
- * IMPORTANT: PayFast requires keys to be sorted alphabetically when generating the signature.
+ * IMPORTANT: PayFast requires keys in the ORDER they are defined in the object.
  * Values must be URL-encoded with spaces replaced by '+'.
  * Empty values should be skipped.
  */
@@ -24,23 +24,21 @@ function generateSignature(
   data: Record<string, string>,
   passPhrase: string | null = null,
 ): string {
-  // Sort keys alphabetically - this is CRITICAL for PayFast
-  const sortedKeys = Object.keys(data).sort();
-
-  // Build the parameter string, skipping empty values
+  // Build the parameter string - keys must be in the order defined in the object
   let pfOutput = "";
-  for (const key of sortedKeys) {
-    const value = data[key];
-    if (value !== undefined && value !== null && value !== "") {
-      pfOutput += `${key}=${encodeURIComponent(value.trim()).replace(/%20/g, "+")}&`;
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      if (data[key] !== "") {
+        pfOutput += `${key}=${encodeURIComponent(data[key].trim()).replace(/%20/g, "+")}&`;
+      }
     }
   }
 
   // Remove trailing ampersand
   let getString = pfOutput.slice(0, -1);
 
-  // Append passphrase if provided (required for live, optional for sandbox)
-  if (passPhrase !== null && passPhrase !== "") {
+  // Append passphrase if provided
+  if (passPhrase !== null) {
     getString += `&passphrase=${encodeURIComponent(passPhrase.trim()).replace(/%20/g, "+")}`;
   }
 
