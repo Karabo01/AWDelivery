@@ -22,7 +22,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  readonly message: string;
+  readonly user: User;
 }
 
 export interface VerifyOtpRequest {

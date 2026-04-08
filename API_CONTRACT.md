@@ -41,8 +41,9 @@
 ## Authentication Model
 
 - JWT stored in an **httpOnly, Secure, SameSite=Strict** cookie named `awdelivery_token`.
-- Cookie is **set** on successful OTP verification (`POST /api/auth/verify-otp`).
+- Cookie is **set** on successful login (`POST /api/auth/login` for verified users) or OTP verification (`POST /api/auth/verify-otp` for newly registered users).
 - Cookie is **cleared** on logout (`POST /api/auth/logout`).
+- OTP verification is only required during **registration** to verify the phone number. Subsequent logins use password only.
 - All protected routes return `401 Unauthorized` if the cookie is missing or the JWT is invalid/expired.
 - Admin-only routes return `403 Forbidden` if `user.isAdmin` is `false`.
 - JWT payload shape: `AuthPayload` (`userId`, `phone`, `isAdmin`).
@@ -168,6 +169,102 @@ All errors return the `ApiError` shape:
 ---
 
 ### Auth
+
+---
+
+#### `POST /api/auth/register`
+
+Create a new user account and send an OTP for phone verification.
+
+| | |
+|---|---|
+| **Auth** | Public |
+
+**Request body:** `RegisterRequest`
+
+```json
+{
+  "name": "John",
+  "surname": "Doe",
+  "phone": "+27812345678",
+  "email": "john@example.com",
+  "password": "securepassword"
+}
+```
+
+**Success response:** `201 Created` — `RegisterResponse`
+
+```json
+{
+  "message": "Account created. Please verify your phone number."
+}
+```
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `VALIDATION_ERROR` | Missing/invalid fields |
+| 409 | `PHONE_TAKEN` | Phone number already registered |
+| 409 | `EMAIL_TAKEN` | Email already registered |
+| 429 | `RATE_LIMITED` | Too many OTP requests for this phone |
+
+**Business rules:**
+- Password is hashed with bcrypt (12 salt rounds).
+- User is created with `isVerified: false`.
+- An OTP is sent via WhatsApp for phone verification.
+- After registration, the user must verify the OTP via `POST /api/auth/verify-otp`.
+
+---
+
+#### `POST /api/auth/login`
+
+Authenticate with phone number and password. Returns the user and sets the JWT cookie directly (no OTP required for verified users).
+
+| | |
+|---|---|
+| **Auth** | Public |
+
+**Request body:** `LoginRequest`
+
+```json
+{
+  "phone": "+27812345678",
+  "password": "securepassword"
+}
+```
+
+**Success response:** `200 OK` — `LoginResponse`
+
+Sets `awdelivery_token` httpOnly cookie.
+
+```json
+{
+  "user": {
+    "id": "uuid",
+    "phone": "+27812345678",
+    "name": "John",
+    "surname": "Doe",
+    "email": "john@example.com",
+    "isVerified": true,
+    "isAdmin": false,
+    "createdAt": "2026-03-14T10:30:00.000Z"
+  }
+}
+```
+
+**Errors:**
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `VALIDATION_ERROR` | Missing/invalid fields |
+| 401 | `INVALID_CREDENTIALS` | Phone not found or wrong password |
+| 403 | `ACCOUNT_NOT_VERIFIED` | Account exists but phone not verified (OTP resent automatically) |
+
+**Business rules:**
+- For **verified users**: JWT cookie is set immediately and user object is returned.
+- For **unverified users**: A new OTP is sent and a `403` error is returned. The frontend should prompt for OTP verification via `POST /api/auth/verify-otp`.
+- JWT expires in 7 days.
 
 ---
 

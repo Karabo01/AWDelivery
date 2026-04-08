@@ -44,8 +44,7 @@ function LoginPage() {
     setServerError(null)
     try {
       await loginUser(values)
-      setPhone(values.phone)
-      setActiveStep('otp')
+      navigate('/dashboard')
     } catch (err: any) {
       const code = err?.response?.data?.code
       if (code === 'ACCOUNT_NOT_VERIFIED') {
@@ -149,7 +148,7 @@ function LoginPage() {
           ) : (
             <form className="space-y-4" onSubmit={onSubmitOtp}>
               <p className="rounded-lg border border-border/80 bg-muted/35 px-3 py-2 text-sm text-muted-foreground">
-                We sent a 6-digit code to <strong>{phone}</strong> for two-factor authentication.
+                We sent a 6-digit code to <strong>{phone}</strong> to verify your phone number.
               </p>
 
               <div className="space-y-2">

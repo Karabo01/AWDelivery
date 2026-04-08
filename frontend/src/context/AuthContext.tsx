@@ -40,6 +40,10 @@ function AuthProvider({ children }: AuthProviderProps) {
 
   const loginMutation = useMutation({
     mutationFn: login,
+    onSuccess: async (result) => {
+      queryClient.setQueryData(['auth', 'me'], { user: result.user })
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+    },
   })
 
   const verifyOtpMutation = useMutation({

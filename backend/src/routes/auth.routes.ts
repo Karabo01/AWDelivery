@@ -114,10 +114,22 @@ router.post("/login", validate(loginSchema), async (req, res) => {
     );
   }
 
-  // Password correct + account verified → send 2FA OTP
-  await generateAndSendOtp(phone);
+  // Password correct + account verified → issue JWT directly
+  const token = jwt.sign(
+    { userId: user.id, phone: user.phone, isAdmin: user.isAdmin },
+    env.JWT_SECRET,
+    { expiresIn: "7d" },
+  );
 
-  res.json({ message: "OTP sent for verification" });
+  res.cookie("awdelivery_token", token, {
+    httpOnly: true,
+    secure: env.isProduction,
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
+  });
+
+  res.json({ user: formatUser(user) });
 });
 
 // ─── POST /auth/verify-otp ──────────────────────────────────────────────────

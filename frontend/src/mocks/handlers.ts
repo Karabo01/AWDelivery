@@ -148,6 +148,60 @@ function sizeSurcharge(parcelSize: ParcelSize) {
 }
 
 export const handlers: RequestHandler[] = [
+	http.post(`${API_URL}/auth/register`, async ({ request }) => {
+		await mockNetworkDelay()
+
+		const body = (await request.json()) as {
+			name?: string
+			surname?: string
+			phone?: string
+			email?: string
+			password?: string
+		}
+		const phone = body.phone ?? ''
+
+		if (!/^\+27\d{9}$/.test(phone)) {
+			return makeApiError('Invalid phone number format', 'INVALID_PHONE', 400)
+		}
+
+		otpStore.set(phone, OTP_CODE)
+		return HttpResponse.json(
+			{ message: 'Account created. Please verify your phone number.' },
+			{ status: 201 },
+		)
+	}),
+
+	http.post(`${API_URL}/auth/login`, async ({ request }) => {
+		await mockNetworkDelay()
+
+		const body = (await request.json()) as { phone?: string; password?: string }
+		const phone = body.phone ?? ''
+		const password = body.password ?? ''
+
+		if (!/^\+27\d{9}$/.test(phone)) {
+			return makeApiError('Invalid phone number or password', 'INVALID_CREDENTIALS', 401)
+		}
+
+		if (!password) {
+			return makeApiError('Invalid phone number or password', 'INVALID_CREDENTIALS', 401)
+		}
+
+		// Mock: any valid phone + password logs in directly
+		const seededUser: User = {
+			id: 'mock-user-1',
+			phone,
+			name: 'Demo',
+			surname: 'Sender',
+			email: 'demo@example.com',
+			isVerified: true,
+			isAdmin: false,
+			createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
+		}
+
+		currentUser = seededUser
+		return HttpResponse.json({ user: seededUser })
+	}),
+
 	http.post(`${API_URL}/auth/send-otp`, async ({ request }) => {
 		await mockNetworkDelay()
 
@@ -192,6 +246,20 @@ export const handlers: RequestHandler[] = [
 		otpStore.delete(phone)
 
 		return HttpResponse.json({ user: seededUser })
+	}),
+
+	http.post(`${API_URL}/auth/resend-otp`, async ({ request }) => {
+		await mockNetworkDelay()
+
+		const body = (await request.json()) as { phone?: string }
+		const phone = body.phone ?? ''
+
+		if (!/^\+27\d{9}$/.test(phone)) {
+			return makeApiError('Invalid phone number format', 'INVALID_PHONE', 400)
+		}
+
+		otpStore.set(phone, OTP_CODE)
+		return HttpResponse.json({ message: 'If an account exists, an OTP has been sent.' })
 	}),
 
 	http.post(`${API_URL}/auth/logout`, async () => {
