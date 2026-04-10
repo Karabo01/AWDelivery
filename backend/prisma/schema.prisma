@@ -31,7 +31,7 @@ enum ParcelSize {
   LARGE
 }
 
-enum WhatsappTemplateType {
+enum NotificationTemplateType {
   ORDER_CONFIRMATION
   PICKUP_SCHEDULED
   PICKED_UP
@@ -101,7 +101,7 @@ model Order {
   driver   Driver?              @relation(fields: [driverId], references: [id])
   timeline OrderTimelineEntry[]
   payments Payment[]
-  whatsappLogs WhatsappLog[]
+  notificationLogs NotificationLog[]
 
   @@map("orders")
 }
@@ -143,16 +143,16 @@ model Otp {
   @@map("otps")
 }
 
-model WhatsappLog {
-  id              String               @id @default(uuid()) @db.Uuid
-  orderId         String?              @db.Uuid
-  recipientPhone  String
-  messageType     WhatsappTemplateType
+model NotificationLog {
+  id              String                   @id @default(uuid()) @db.Uuid
+  orderId         String?                  @db.Uuid
+  recipientEmail  String
+  messageType     NotificationTemplateType
   content         String
-  sentAt          DateTime             @default(now())
-  deliveryStatus  String               @default("sent")
+  sentAt          DateTime                 @default(now())
+  deliveryStatus  String                   @default("sent")
 
   order Order? @relation(fields: [orderId], references: [id])
 
-  @@map("whatsapp_logs")
+  @@map("notification_logs")
 }

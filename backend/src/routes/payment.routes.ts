@@ -6,7 +6,7 @@ import { validate } from "../middleware/validate.js";
 import { initiatePaymentSchema } from "../validation/schemas.js";
 import { AppError } from "../utils/errors.js";
 import { buildPayFastFormData, validatePayFastSignature } from "../services/payfast.service.js";
-import { sendWhatsAppMessage } from "../services/whatsapp.service.js";
+import { sendNotificationEmail } from "../services/email.service.js";
 import { OrderStatus, PaymentStatus } from "@prisma/client";
 
 const router = Router();
@@ -143,15 +143,18 @@ router.post("/webhook", async (req, res) => {
 
       console.log(`[PayFast] Order ${orderId} marked PAID + CONFIRMED`);
 
-      // Send WhatsApp confirmation (fire and forget)
-      sendWhatsAppMessage(
-        order.receiverPhone,
-        "ORDER_CONFIRMATION",
-        { trackingNumber: order.trackingNumber },
-        orderId,
-      ).catch((err) =>
-        console.error("[WhatsApp] Failed to send confirmation:", err),
-      );
+      // Send email confirmation (fire and forget)
+      const sender = await prisma.user.findUnique({ where: { id: order.senderId }, select: { email: true } });
+      if (sender?.email) {
+        sendNotificationEmail(
+          sender.email,
+          "ORDER_CONFIRMATION" as any,
+          { trackingNumber: order.trackingNumber },
+          orderId,
+        ).catch((err) =>
+          console.error("[Email] Failed to send confirmation:", err),
+        );
+      }
     } else {
       // CANCELLED or FAILED
       await prisma.$transaction([

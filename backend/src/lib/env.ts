@@ -25,20 +25,13 @@ export const env = {
   FRONTEND_URL: process.env.FRONTEND_URL || "https://awdelivery.co.za:5173",
   BACKEND_URL: process.env.BACKEND_URL || "https://api.awdelivery.co.za:3000",
 
-  // Twilio WhatsApp Configuration
-  TWILIO_ACCOUNT_SID: required("TWILIO_ACCOUNT_SID"),
-  TWILIO_AUTH_TOKEN: required("TWILIO_AUTH_TOKEN"),
-  TWILIO_WHATSAPP_FROM: required("TWILIO_WHATSAPP_FROM"),
-
-  // Twilio Content Template SIDs
-  TWILIO_CONTENT_SID_OTP: required("TWILIO_CONTENT_SID_OTP"),
-  TWILIO_CONTENT_SID_ORDER_CONFIRMATION: process.env.TWILIO_CONTENT_SID_ORDER_CONFIRMATION || "",
-  TWILIO_CONTENT_SID_PICKUP_SCHEDULED: process.env.TWILIO_CONTENT_SID_PICKUP_SCHEDULED || "",
-  TWILIO_CONTENT_SID_PICKED_UP: process.env.TWILIO_CONTENT_SID_PICKED_UP || "",
-  TWILIO_CONTENT_SID_IN_TRANSIT: process.env.TWILIO_CONTENT_SID_IN_TRANSIT || "",
-  TWILIO_CONTENT_SID_DELIVERED: process.env.TWILIO_CONTENT_SID_DELIVERED || "",
-  TWILIO_CONTENT_SID_DELAY_ALERT: process.env.TWILIO_CONTENT_SID_DELAY_ALERT || "",
-  TWILIO_CONTENT_SID_DRIVER_ASSIGNMENT: process.env.TWILIO_CONTENT_SID_DRIVER_ASSIGNMENT || "",
+  // Email (SMTP)
+  SMTP_HOST: process.env.SMTP_HOST || "localhost",
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
+  SMTP_USER: process.env.SMTP_USER || "",
+  SMTP_PASS: process.env.SMTP_PASS || "",
+  EMAIL_FROM_SECURITY: process.env.EMAIL_FROM_SECURITY || "security@awdelivery.co.za",
+  EMAIL_FROM_NOTIFICATIONS: process.env.EMAIL_FROM_NOTIFICATIONS || "notifications@awdelivery.co.za",
 
   get isProduction() {
     return this.NODE_ENV === "production";

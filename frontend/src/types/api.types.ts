@@ -1,6 +1,6 @@
 import type { Address, Order, OrderStatus, OrderTimeline, ParcelDetails, ParcelSize } from './order.types'
 import type { User } from './user.types'
-import type { WhatsappTemplateType } from './whatsapp.types'
+import type { NotificationTemplateType } from './notification.types'
 
 export interface RegisterRequest {
   readonly name: string
@@ -93,7 +93,7 @@ export interface UpdateOrderStatusRequest {
 }
 
 export interface NotifyOrderRequest {
-  readonly templateType: WhatsappTemplateType
+  readonly templateType: NotificationTemplateType
   readonly recipient: 'sender' | 'receiver' | 'both'
 }
 

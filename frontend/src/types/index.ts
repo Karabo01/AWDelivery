@@ -1,6 +1,6 @@
 export * from './order.types'
 export * from './user.types'
 export * from './payment.types'
-export * from './whatsapp.types'
+export * from './notification.types'
 export * from './api.types'
 export * from './driver.types'

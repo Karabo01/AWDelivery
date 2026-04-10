@@ -14,8 +14,8 @@ import {
 } from "../validation/schemas.js";
 import { AppError } from "../utils/errors.js";
 import { isValidTransition } from "../utils/statusTransitions.js";
-import { sendWhatsAppMessage } from "../services/whatsapp.service.js";
-import type { OrderStatus, WhatsappTemplateType } from "@prisma/client";
+import { sendNotificationEmail } from "../services/email.service.js";
+import type { OrderStatus, NotificationTemplateType } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 
 const router = Router();
@@ -157,7 +157,7 @@ router.post(
   async (req, res) => {
     const id = req.params.id as string;
     const { templateType, recipient } = req.body as {
-      templateType: WhatsappTemplateType;
+      templateType: NotificationTemplateType;
       recipient: "sender" | "receiver" | "both";
     };
 
@@ -173,8 +173,8 @@ router.post(
     const logs = [];
 
     if (recipient === "sender" || recipient === "both") {
-      const log = await sendWhatsAppMessage(
-        order.sender.phone,
+      const log = await sendNotificationEmail(
+        order.sender.email,
         templateType,
         { trackingNumber: order.trackingNumber },
         order.id,
@@ -183,7 +183,7 @@ router.post(
     }
 
     if (recipient === "receiver" || recipient === "both") {
-      const log = await sendWhatsAppMessage(
+      const log = await sendNotificationEmail(
         order.receiverPhone,
         templateType,
         { trackingNumber: order.trackingNumber },
@@ -194,7 +194,7 @@ router.post(
 
     res.json({
       message: `Notification sent to ${recipient}`,
-      logs: logs.map(formatWhatsappLog),
+      logs: logs.map(formatNotificationLog),
     });
   },
 );
@@ -460,11 +460,11 @@ function formatDriver(driver: any) {
   };
 }
 
-function formatWhatsappLog(log: any) {
+function formatNotificationLog(log: any) {
   return {
     id: log.id,
     orderId: log.orderId,
-    recipientPhone: log.recipientPhone,
+    recipientEmail: log.recipientEmail,
     messageType: log.messageType,
     content: log.content,
     sentAt: log.sentAt instanceof Date ? log.sentAt.toISOString() : log.sentAt,

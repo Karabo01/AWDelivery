@@ -1,6 +1,6 @@
 import type { Address, Order, OrderStatus, OrderTimeline, ParcelDetails, ParcelSize } from "./order.types.js";
 import type { User } from "./user.types.js";
-import type { WhatsappTemplateType } from "./whatsapp.types.js";
+import type { NotificationTemplateType } from "./notification.types.js";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
@@ -107,7 +107,7 @@ export interface UpdateOrderStatusRequest {
 }
 
 export interface NotifyOrderRequest {
-  readonly templateType: WhatsappTemplateType;
+  readonly templateType: NotificationTemplateType;
   readonly recipient: "sender" | "receiver" | "both";
 }
 

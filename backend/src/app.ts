@@ -8,7 +8,6 @@ import authRoutes from "./routes/auth.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
-import whatsappRoutes from "./routes/whatsapp.routes.js";
 import healthRoutes from "./routes/health.routes.js";
 
 export function createApp() {
@@ -47,7 +46,6 @@ export function createApp() {
   app.use("/api/orders", orderRoutes);
   app.use("/api/payments", paymentRoutes);
   app.use("/api/admin", adminRoutes);
-  app.use("/api/whatsapp", whatsappRoutes);
   app.use("/api/health", healthRoutes);
 
   // ─── Global error handler (must be last) ─────────────────────────────────────
