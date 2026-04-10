@@ -30,8 +30,7 @@ export const env = {
   SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
   SMTP_USER: process.env.SMTP_USER || "",
   SMTP_PASS: process.env.SMTP_PASS || "",
-  EMAIL_FROM_SECURITY: process.env.EMAIL_FROM_SECURITY || "security@awdelivery.co.za",
-  EMAIL_FROM_NOTIFICATIONS: process.env.EMAIL_FROM_NOTIFICATIONS || "notifications@awdelivery.co.za",
+  EMAIL_FROM: process.env.EMAIL_FROM || "notifications@awdelivery.co.za",
 
   get isProduction() {
     return this.NODE_ENV === "production";

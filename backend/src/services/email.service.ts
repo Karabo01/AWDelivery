@@ -36,7 +36,7 @@ export async function sendNotificationEmail(
     );
 
     await getTransporter().sendMail({
-      from: `"AWDelivery Notifications" <${env.EMAIL_FROM_NOTIFICATIONS}>`,
+      from: `"AWDelivery" <${env.EMAIL_FROM}>`,
       to: recipientEmail,
       subject: template.subject,
       html: template.html,
@@ -80,7 +80,7 @@ export async function sendOtpEmail(email: string, code: string) {
     console.log(`[Email] Sending OTP to ${email}`);
 
     await getTransporter().sendMail({
-      from: `"AWDelivery Security" <${env.EMAIL_FROM_SECURITY}>`,
+      from: `"AWDelivery" <${env.EMAIL_FROM}>`,
       to: email,
       subject: template.subject,
       html: template.html,
