@@ -84,6 +84,7 @@ export interface InitiatePaymentRequest {
 
 export interface InitiatePaymentResponse {
   readonly redirectUrl: string
+  readonly formData: Record<string, string>
 }
 
 export interface UpdateOrderStatusRequest {

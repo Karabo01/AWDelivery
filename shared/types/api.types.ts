@@ -95,6 +95,8 @@ export interface InitiatePaymentRequest {
 export interface InitiatePaymentResponse {
   /** PayFast redirect URL */
   readonly redirectUrl: string;
+  /** PayFast form data for POST submission */
+  readonly formData: Record<string, string>;
 }
 
 // ─── Admin ───────────────────────────────────────────────────────────────────

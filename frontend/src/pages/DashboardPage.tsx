@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import StatusBadge from '@/components/shared/StatusBadge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -11,12 +13,28 @@ import {
 } from '@/components/ui/card'
 import { formatCentsToZar, formatDateTime } from '@/lib/format'
 import { getMyOrders } from '@/services/orders.service'
+import { initiatePayment, submitPayFastForm } from '@/services/payment.service'
+import { PaymentStatus } from '@/types'
 
 function DashboardPage() {
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null)
+
   const ordersQuery = useQuery({
     queryKey: ['orders', 'mine'],
     queryFn: () => getMyOrders({ page: 1, pageSize: 20 }),
   })
+
+  const payMutation = useMutation({
+    mutationFn: initiatePayment,
+    onSuccess: (result) => {
+      submitPayFastForm(result.redirectUrl, result.formData)
+    },
+  })
+
+  const handlePay = (orderId: string) => {
+    setPayingOrderId(orderId)
+    payMutation.mutate({ orderId })
+  }
 
   return (
     <div className="space-y-7 py-2">
@@ -67,6 +85,27 @@ function DashboardPage() {
               <p>
                 <span className="text-muted-foreground">Payment:</span> {order.paymentStatus}
               </p>
+              {(order.paymentStatus === PaymentStatus.PENDING ||
+                order.paymentStatus === PaymentStatus.FAILED) ? (
+                <div className="sm:col-span-2 pt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handlePay(order.id)}
+                    disabled={payMutation.isPending && payingOrderId === order.id}
+                  >
+                    {payMutation.isPending && payingOrderId === order.id
+                      ? 'Redirecting...'
+                      : order.paymentStatus === PaymentStatus.FAILED
+                        ? 'Retry Payment'
+                        : 'Pay Now'}
+                  </Button>
+                  {payMutation.isError && payingOrderId === order.id ? (
+                    <p className="text-sm text-destructive mt-1">
+                      Payment failed to initiate. Please try again.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         ))}

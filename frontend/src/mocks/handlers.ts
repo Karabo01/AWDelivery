@@ -426,4 +426,40 @@ export const handlers: RequestHandler[] = [
 			timeline: timelines.get(trackingNumber) ?? [],
 		})
 	}),
+
+	http.post(`${API_URL}/payments/initiate`, async ({ request }) => {
+		await mockNetworkDelay()
+
+		const unauthorized = ensureAuthenticated()
+		if (unauthorized) {
+			return unauthorized
+		}
+
+		const body = (await request.json()) as { orderId?: string }
+		const orderId = body.orderId ?? ''
+
+		const order = orders.find((item) => item.id === orderId)
+		if (!order) {
+			return makeApiError('Order not found', 'ORDER_NOT_FOUND', 404)
+		}
+
+		if (order.paymentStatus === PaymentStatus.PAID) {
+			return makeApiError(
+				'A payment for this order has already been completed',
+				'DUPLICATE_PAYMENT',
+				409,
+			)
+		}
+
+		return HttpResponse.json({
+			redirectUrl: 'https://sandbox.payfast.co.za/eng/process',
+			formData: {
+				merchant_id: '10000100',
+				merchant_key: '46f0cd694581a',
+				amount: (order.quoteAmount / 100).toFixed(2),
+				item_name: `AWDelivery ${order.trackingNumber}`,
+				m_payment_id: order.id,
+			},
+		})
+	}),
 ]
