@@ -92,14 +92,13 @@ router.post("/", authenticate, validate(createOrderSchema), async (req, res) => 
   });
 
   // Build PayFast form data for POST submission
-  const backendUrl = `${req.protocol}://${req.get("host")}`;
   const paymentData = buildPayFastFormData({
     orderId: order.id,
     amount: quoteData.amount,
     itemName: `AWDelivery ${trackingNumber}`,
     returnUrl: `${env.FRONTEND_URL}/dashboard`,
     cancelUrl: `${env.FRONTEND_URL}/dashboard`,
-    notifyUrl: `${backendUrl}/api/payments/webhook`,
+    notifyUrl: `${env.BACKEND_URL}/api/payments/webhook`,
   });
 
   res.status(201).json({
