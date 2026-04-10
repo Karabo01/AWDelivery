@@ -31,7 +31,7 @@ function RegisterPage() {
   const { registerUser, verifyOtpCode, resendOtpCode, isLoading } = useAuth()
   const [activeStep, setActiveStep] = useState<'register' | 'verify'>('register')
   const [serverError, setServerError] = useState<string | null>(null)
-  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
 
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -47,7 +47,7 @@ function RegisterPage() {
     setServerError(null)
     try {
       await registerUser(values)
-      setPhone(values.phone)
+      setEmail(values.email)
       setActiveStep('verify')
     } catch (err: any) {
       const message = err?.response?.data?.message ?? 'Registration failed. Please try again.'
@@ -58,7 +58,7 @@ function RegisterPage() {
   const onSubmitOtp = otpForm.handleSubmit(async (values) => {
     setServerError(null)
     try {
-      await verifyOtpCode({ phone, code: values.code })
+      await verifyOtpCode({ email, code: values.code })
       navigate('/dashboard')
     } catch {
       setServerError('Invalid or expired OTP. Please try again.')
@@ -68,7 +68,7 @@ function RegisterPage() {
   const handleResendOtp = async () => {
     setServerError(null)
     try {
-      await resendOtpCode({ phone })
+      await resendOtpCode({ email })
       setServerError(null)
     } catch {
       setServerError('Unable to resend OTP. Please try again.')
@@ -85,7 +85,7 @@ function RegisterPage() {
       <Card className="border-border/85 bg-card/95">
         <CardHeader className="pb-2">
           <CardTitle>
-            {activeStep === 'register' ? 'Create an account' : 'Verify your phone'}
+            {activeStep === 'register' ? 'Create an account' : 'Verify your email'}
           </CardTitle>
         </CardHeader>
 
@@ -186,7 +186,7 @@ function RegisterPage() {
           ) : (
             <form className="space-y-4" onSubmit={onSubmitOtp}>
               <p className="rounded-lg border border-border/80 bg-muted/35 px-3 py-2 text-sm text-muted-foreground">
-                We sent a 6-digit code to <strong>{phone}</strong>. Enter it below to verify your
+                We sent a 6-digit code to <strong>{email}</strong>. Enter it below to verify your
                 account.
               </p>
 

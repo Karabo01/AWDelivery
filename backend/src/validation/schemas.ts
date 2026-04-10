@@ -46,12 +46,12 @@ export const loginSchema = z.object({
 });
 
 export const verifyOtpSchema = z.object({
-  phone: phoneSchema,
+  email: z.string().email(),
   code: z.string().length(6),
 });
 
 export const resendOtpSchema = z.object({
-  phone: phoneSchema,
+  email: z.string().email(),
 });
 
 // ─── Orders ──────────────────────────────────────────────────────────────────

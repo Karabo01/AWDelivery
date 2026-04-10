@@ -27,7 +27,7 @@ function LoginPage() {
   const { loginUser, verifyOtpCode, resendOtpCode, isLoading } = useAuth()
   const [activeStep, setActiveStep] = useState<'credentials' | 'otp'>('credentials')
   const [serverError, setServerError] = useState<string | null>(null)
-  const [phone, setPhone] = useState('')
+  const [loginEmail, setLoginEmail] = useState('')
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -48,7 +48,7 @@ function LoginPage() {
       const code = err?.response?.data?.code
       if (code === 'ACCOUNT_NOT_VERIFIED') {
         // Backend already resent OTP — go straight to verification
-        setPhone(err?.response?.data?.phone ?? '')
+        setLoginEmail(values.email)
         setActiveStep('otp')
         setServerError('Your account is not yet verified. Please enter the OTP sent to your email.')
         return
@@ -61,7 +61,7 @@ function LoginPage() {
   const onSubmitOtp = otpForm.handleSubmit(async (values) => {
     setServerError(null)
     try {
-      await verifyOtpCode({ phone, code: values.code })
+      await verifyOtpCode({ email: loginEmail, code: values.code })
       navigate('/dashboard')
     } catch {
       setServerError('Invalid or expired OTP. Please try again.')
@@ -71,7 +71,7 @@ function LoginPage() {
   const handleResendOtp = async () => {
     setServerError(null)
     try {
-      await resendOtpCode({ phone })
+      await resendOtpCode({ email: loginEmail })
     } catch {
       setServerError('Unable to resend OTP. Please try again.')
     }

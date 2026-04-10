@@ -33,11 +33,11 @@ function formatUser(user: any) {
   };
 }
 
-async function generateAndSendOtp(phone: string) {
-  // Rate limit: max 3 OTPs per phone in 5 minutes
+async function generateAndSendOtp(email: string) {
+  // Rate limit: max 3 OTPs per email in 5 minutes
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
   const recentCount = await prisma.otp.count({
-    where: { phone, createdAt: { gte: fiveMinutesAgo } },
+    where: { email, createdAt: { gte: fiveMinutesAgo } },
   });
 
   if (recentCount >= 3) {
@@ -47,13 +47,9 @@ async function generateAndSendOtp(phone: string) {
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  await prisma.otp.create({ data: { phone, code, expiresAt } });
+  await prisma.otp.create({ data: { email, code, expiresAt } });
 
-  // Send OTP via email
-  const user = await prisma.user.findUnique({ where: { phone }, select: { email: true } });
-  if (user?.email) {
-    await sendOtpEmail(user.email, code);
-  }
+  await sendOtpEmail(email, code);
 }
 
 // ─── POST /auth/register ─────────────────────────────────────────────────────
@@ -85,10 +81,10 @@ router.post("/register", validate(registerSchema), async (req, res) => {
     data: { name, surname, phone, email, password: hashedPassword },
   });
 
-  // Send OTP for phone verification
-  await generateAndSendOtp(phone);
+  // Send OTP for email verification
+  await generateAndSendOtp(email);
 
-  res.status(201).json({ message: "Account created. Please verify your phone number." });
+  res.status(201).json({ message: "Account created. Please verify your email address." });
 });
 
 // ─── POST /auth/login ────────────────────────────────────────────────────────
@@ -109,7 +105,7 @@ router.post("/login", validate(loginSchema), async (req, res) => {
 
   if (!user.isVerified) {
     // Re-send OTP so the user can verify
-    await generateAndSendOtp(user.phone);
+    await generateAndSendOtp(user.email);
     throw new AppError(
       "Account not verified. A new OTP has been sent to your email.",
       "ACCOUNT_NOT_VERIFIED",
@@ -138,10 +134,10 @@ router.post("/login", validate(loginSchema), async (req, res) => {
 // ─── POST /auth/verify-otp ──────────────────────────────────────────────────
 
 router.post("/verify-otp", validate(verifyOtpSchema), async (req, res) => {
-  const { phone, code } = req.body as { phone: string; code: string };
+  const { email, code } = req.body as { email: string; code: string };
 
   const otp = await prisma.otp.findFirst({
-    where: { phone, code, expiresAt: { gt: new Date() } },
+    where: { email, code, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -150,11 +146,11 @@ router.post("/verify-otp", validate(verifyOtpSchema), async (req, res) => {
   }
 
   // Clean up OTPs
-  await prisma.otp.deleteMany({ where: { phone } });
+  await prisma.otp.deleteMany({ where: { email } });
 
   // Mark user as verified (idempotent)
   const user = await prisma.user.update({
-    where: { phone },
+    where: { email },
     data: { isVerified: true },
   });
 
@@ -179,17 +175,17 @@ router.post("/verify-otp", validate(verifyOtpSchema), async (req, res) => {
 // ─── POST /auth/resend-otp ──────────────────────────────────────────────────
 
 router.post("/resend-otp", validate(resendOtpSchema), async (req, res) => {
-  const { phone } = req.body as { phone: string };
+  const { email } = req.body as { email: string };
 
   // Only allow resend for existing users
-  const user = await prisma.user.findUnique({ where: { phone } });
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    // Return success to prevent phone enumeration
+    // Return success to prevent email enumeration
     res.json({ message: "If an account exists, an OTP has been sent." });
     return;
   }
 
-  await generateAndSendOtp(phone);
+  await generateAndSendOtp(email);
 
   res.json({ message: "If an account exists, an OTP has been sent." });
 });

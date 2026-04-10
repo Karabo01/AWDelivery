@@ -134,12 +134,12 @@ model Payment {
 
 model Otp {
   id        String   @id @default(uuid()) @db.Uuid
-  phone     String
+  email     String
   code      String
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  @@index([phone, createdAt])
+  @@index([email, createdAt])
   @@map("otps")
 }
 

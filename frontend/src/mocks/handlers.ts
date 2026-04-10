@@ -158,15 +158,15 @@ export const handlers: RequestHandler[] = [
 			email?: string
 			password?: string
 		}
-		const phone = body.phone ?? ''
+		const email = body.email ?? ''
 
-		if (!/^\+27\d{9}$/.test(phone)) {
-			return makeApiError('Invalid phone number format', 'INVALID_PHONE', 400)
+		if (!email) {
+			return makeApiError('Invalid email address', 'INVALID_EMAIL', 400)
 		}
 
-		otpStore.set(phone, OTP_CODE)
+		otpStore.set(email, OTP_CODE)
 		return HttpResponse.json(
-			{ message: 'Account created. Please verify your phone number.' },
+			{ message: 'Account created. Please verify your email address.' },
 			{ status: 201 },
 		)
 	}),
@@ -205,45 +205,45 @@ export const handlers: RequestHandler[] = [
 	http.post(`${API_URL}/auth/send-otp`, async ({ request }) => {
 		await mockNetworkDelay()
 
-		const body = (await request.json()) as { phone?: string }
-		const phone = body.phone ?? ''
+		const body = (await request.json()) as { email?: string }
+		const email = body.email ?? ''
 
-		if (!/^\+27\d{9}$/.test(phone)) {
-			return makeApiError('Invalid phone number format', 'INVALID_PHONE', 400)
+		if (!email) {
+			return makeApiError('Invalid email address', 'INVALID_EMAIL', 400)
 		}
 
-		otpStore.set(phone, OTP_CODE)
+		otpStore.set(email, OTP_CODE)
 		return HttpResponse.json({ message: 'OTP sent successfully' })
 	}),
 
 	http.post(`${API_URL}/auth/verify-otp`, async ({ request }) => {
 		await mockNetworkDelay()
 
-		const body = (await request.json()) as { phone?: string; code?: string }
-		const phone = body.phone ?? ''
+		const body = (await request.json()) as { email?: string; code?: string }
+		const email = body.email ?? ''
 		const code = body.code ?? ''
 
-		if (!/^\+27\d{9}$/.test(phone)) {
-			return makeApiError('Invalid phone number format', 'INVALID_PHONE', 400)
+		if (!email) {
+			return makeApiError('Invalid email address', 'INVALID_EMAIL', 400)
 		}
 
-		if (!otpStore.has(phone) || otpStore.get(phone) !== code) {
+		if (!otpStore.has(email) || otpStore.get(email) !== code) {
 			return makeApiError('OTP is invalid or expired', 'INVALID_OTP', 400)
 		}
 
 		const seededUser: User = {
 			id: 'mock-user-1',
-			phone,
+			phone: '+27810000000',
 			name: 'Demo',
 			surname: 'Sender',
-			email: 'demo@example.com',
+			email,
 			isVerified: true,
 			isAdmin: false,
 			createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
 		}
 
 		currentUser = seededUser
-		otpStore.delete(phone)
+		otpStore.delete(email)
 
 		return HttpResponse.json({ user: seededUser })
 	}),
@@ -251,14 +251,14 @@ export const handlers: RequestHandler[] = [
 	http.post(`${API_URL}/auth/resend-otp`, async ({ request }) => {
 		await mockNetworkDelay()
 
-		const body = (await request.json()) as { phone?: string }
-		const phone = body.phone ?? ''
+		const body = (await request.json()) as { email?: string }
+		const email = body.email ?? ''
 
-		if (!/^\+27\d{9}$/.test(phone)) {
-			return makeApiError('Invalid phone number format', 'INVALID_PHONE', 400)
+		if (!email) {
+			return makeApiError('Invalid email address', 'INVALID_EMAIL', 400)
 		}
 
-		otpStore.set(phone, OTP_CODE)
+		otpStore.set(email, OTP_CODE)
 		return HttpResponse.json({ message: 'If an account exists, an OTP has been sent.' })
 	}),
 

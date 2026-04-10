@@ -26,7 +26,7 @@ export interface LoginResponse {
 }
 
 export interface VerifyOtpRequest {
-  readonly phone: string;
+  readonly email: string;
   readonly code: string;
 }
 
@@ -35,7 +35,7 @@ export interface VerifyOtpResponse {
 }
 
 export interface ResendOtpRequest {
-  readonly phone: string;
+  readonly email: string;
 }
 
 export interface ResendOtpResponse {
