@@ -15,7 +15,7 @@ export interface RegisterResponse {
 }
 
 export interface LoginRequest {
-  readonly phone: string
+  readonly email: string
   readonly password: string
 }
 

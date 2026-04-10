@@ -41,7 +41,7 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  phone: phoneSchema,
+  email: z.string().email(),
   password: z.string().min(1),
 });
 

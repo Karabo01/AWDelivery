@@ -174,25 +174,25 @@ export const handlers: RequestHandler[] = [
 	http.post(`${API_URL}/auth/login`, async ({ request }) => {
 		await mockNetworkDelay()
 
-		const body = (await request.json()) as { phone?: string; password?: string }
-		const phone = body.phone ?? ''
+		const body = (await request.json()) as { email?: string; password?: string }
+		const email = body.email ?? ''
 		const password = body.password ?? ''
 
-		if (!/^\+27\d{9}$/.test(phone)) {
-			return makeApiError('Invalid phone number or password', 'INVALID_CREDENTIALS', 401)
+		if (!email) {
+			return makeApiError('Invalid email or password', 'INVALID_CREDENTIALS', 401)
 		}
 
 		if (!password) {
-			return makeApiError('Invalid phone number or password', 'INVALID_CREDENTIALS', 401)
+			return makeApiError('Invalid email or password', 'INVALID_CREDENTIALS', 401)
 		}
 
-		// Mock: any valid phone + password logs in directly
+		// Mock: any valid email + password logs in directly
 		const seededUser: User = {
 			id: 'mock-user-1',
-			phone,
+			phone: '+27810000000',
 			name: 'Demo',
 			surname: 'Sender',
-			email: 'demo@example.com',
+			email,
 			isVerified: true,
 			isAdmin: false,
 			createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),

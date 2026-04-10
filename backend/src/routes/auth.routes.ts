@@ -94,24 +94,24 @@ router.post("/register", validate(registerSchema), async (req, res) => {
 // ─── POST /auth/login ────────────────────────────────────────────────────────
 
 router.post("/login", validate(loginSchema), async (req, res) => {
-  const { phone, password } = req.body as { phone: string; password: string };
+  const { email, password } = req.body as { email: string; password: string };
 
-  const user = await prisma.user.findUnique({ where: { phone } });
+  const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
-    throw new AppError("Invalid phone number or password", "INVALID_CREDENTIALS", 401);
+    throw new AppError("Invalid email or password", "INVALID_CREDENTIALS", 401);
   }
 
   const passwordMatch = await bcrypt.compare(password, user.password);
   if (!passwordMatch) {
-    throw new AppError("Invalid phone number or password", "INVALID_CREDENTIALS", 401);
+    throw new AppError("Invalid email or password", "INVALID_CREDENTIALS", 401);
   }
 
   if (!user.isVerified) {
     // Re-send OTP so the user can verify
-    await generateAndSendOtp(phone);
+    await generateAndSendOtp(user.phone);
     throw new AppError(
-      "Account not verified. A new OTP has been sent to your phone.",
+      "Account not verified. A new OTP has been sent to your email.",
       "ACCOUNT_NOT_VERIFIED",
       403,
     );

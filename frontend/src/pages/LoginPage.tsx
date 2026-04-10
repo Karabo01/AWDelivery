@@ -8,11 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatToSaE164, isValidSaE164 } from '@/lib/format'
 import useAuth from '@/hooks/useAuth'
 
 const loginSchema = z.object({
-  phone: z.string().refine(isValidSaE164, 'Use a valid South African number (+27XXXXXXXXX).'),
+  email: z.string().email('Enter a valid email address.'),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -32,7 +31,7 @@ function LoginPage() {
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { phone: '+27', password: '' },
+    defaultValues: { email: '', password: '' },
   })
 
   const otpForm = useForm<OtpFormValues>({
@@ -49,12 +48,12 @@ function LoginPage() {
       const code = err?.response?.data?.code
       if (code === 'ACCOUNT_NOT_VERIFIED') {
         // Backend already resent OTP — go straight to verification
-        setPhone(values.phone)
+        setPhone(err?.response?.data?.phone ?? '')
         setActiveStep('otp')
-        setServerError('Your account is not yet verified. Please enter the OTP sent to your phone.')
+        setServerError('Your account is not yet verified. Please enter the OTP sent to your email.')
         return
       }
-      const message = err?.response?.data?.message ?? 'Invalid phone number or password.'
+      const message = err?.response?.data?.message ?? 'Invalid email or password.'
       setServerError(message)
     }
   })
@@ -96,21 +95,16 @@ function LoginPage() {
           {activeStep === 'credentials' ? (
             <form className="space-y-4" onSubmit={onSubmitLogin}>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone number</Label>
+                <Label htmlFor="email">Email address</Label>
                 <Input
-                  id="phone"
-                  placeholder="+27812345678"
-                  inputMode="tel"
-                  value={loginForm.watch('phone')}
-                  onChange={(e) => {
-                    loginForm.setValue('phone', formatToSaE164(e.target.value), {
-                      shouldValidate: true,
-                    })
-                  }}
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  {...loginForm.register('email')}
                 />
-                {loginForm.formState.errors.phone ? (
+                {loginForm.formState.errors.email ? (
                   <p className="text-sm text-destructive">
-                    {loginForm.formState.errors.phone.message}
+                    {loginForm.formState.errors.email.message}
                   </p>
                 ) : null}
               </div>
@@ -148,7 +142,7 @@ function LoginPage() {
           ) : (
             <form className="space-y-4" onSubmit={onSubmitOtp}>
               <p className="rounded-lg border border-border/80 bg-muted/35 px-3 py-2 text-sm text-muted-foreground">
-                We sent a 6-digit code to <strong>{phone}</strong> to verify your phone number.
+                We sent a 6-digit code to your email to verify your account.
               </p>
 
               <div className="space-y-2">
