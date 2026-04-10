@@ -67,12 +67,22 @@ router.post("/webhook", async (req, res) => {
   try {
     const payload = req.body as Record<string, string>;
 
+    console.log("[PayFast] Webhook received:", {
+      m_payment_id: payload.m_payment_id,
+      pf_payment_id: payload.pf_payment_id,
+      payment_status: payload.payment_status,
+      amount_gross: payload.amount_gross,
+      hasSignature: Boolean(payload.signature),
+    });
+
     // Validate MD5 signature
     if (!validatePayFastSignature(payload)) {
-      console.error("[PayFast] Invalid webhook signature — discarding");
+      console.error("[PayFast] Invalid webhook signature — discarding. Received keys:", Object.keys(payload).join(", "));
       res.status(200).send();
       return;
     }
+
+    console.log("[PayFast] Signature valid — processing payment");
 
     const orderId = payload.m_payment_id;
     const pfPaymentId = payload.pf_payment_id;
@@ -130,6 +140,8 @@ router.post("/webhook", async (req, res) => {
           },
         }),
       ]);
+
+      console.log(`[PayFast] Order ${orderId} marked PAID + CONFIRMED`);
 
       // Send WhatsApp confirmation (fire and forget)
       sendWhatsAppMessage(
