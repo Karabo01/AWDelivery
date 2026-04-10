@@ -22,7 +22,8 @@ export const env = {
   PAYFAST_MERCHANT_KEY: process.env.PAYFAST_MERCHANT_KEY || "46f0cd694581a",
   PAYFAST_PASSPHRASE: process.env.PAYFAST_PASSPHRASE || "",
   PAYFAST_SANDBOX: process.env.PAYFAST_SANDBOX !== "false",
-  FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
+  FRONTEND_URL: process.env.FRONTEND_URL || "https://awdelivery.co.za:5173",
+  BACKEND_URL: process.env.BACKEND_URL || "https://api.awdelivery.co.za:3000",
 
   // Twilio WhatsApp Configuration
   TWILIO_ACCOUNT_SID: required("TWILIO_ACCOUNT_SID"),

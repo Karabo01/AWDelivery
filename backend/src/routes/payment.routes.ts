@@ -45,14 +45,13 @@ router.post("/initiate", authenticate, validate(initiatePaymentSchema), async (r
     throw new AppError("Payment cannot be retried", "VALIDATION_ERROR", 400);
   }
 
-  const backendUrl = `${req.protocol}://${req.get("host")}`;
   const paymentData = buildPayFastFormData({
     orderId: order.id,
     amount: order.quoteAmount,
     itemName: `AWDelivery ${order.trackingNumber}`,
     returnUrl: `${env.FRONTEND_URL}/dashboard`,
     cancelUrl: `${env.FRONTEND_URL}/dashboard`,
-    notifyUrl: `${backendUrl}/api/payments/webhook`,
+    notifyUrl: `${env.BACKEND_URL}/api/payments/webhook`,
   });
 
   res.json({ 
