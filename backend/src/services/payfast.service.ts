@@ -112,17 +112,21 @@ export function validatePayFastSignature(
   const receivedSignature = payload.signature;
   if (!receivedSignature) return false;
 
-  // Create data object without the signature field
-  const data: Record<string, string> = {};
+  // Build param string from ALL fields except signature, in received order.
+  // Unlike outgoing signatures, ITN validation must include empty values.
+  let pfParamString = "";
   for (const key of Object.keys(payload)) {
     if (key !== "signature") {
-      data[key] = payload[key];
+      pfParamString += `${key}=${encodeURIComponent((payload[key] ?? "").trim()).replace(/%20/g, "+")}&`;
     }
   }
+  pfParamString = pfParamString.slice(0, -1);
 
-  // Generate signature and compare (uses sorted keys internally)
   const passPhrase = env.PAYFAST_PASSPHRASE || null;
-  const computedSignature = generateSignature(data, passPhrase);
-  
+  if (passPhrase) {
+    pfParamString += `&passphrase=${encodeURIComponent(passPhrase.trim()).replace(/%20/g, "+")}`;
+  }
+
+  const computedSignature = crypto.createHash("md5").update(pfParamString).digest("hex");
   return computedSignature === receivedSignature;
 }
