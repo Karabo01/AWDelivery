@@ -99,7 +99,7 @@ router.post("/", authenticate, validate(createOrderSchema), async (req, res) => 
     itemName: `AWDelivery ${trackingNumber}`,
     returnUrl: `${env.FRONTEND_URL}/dashboard`,
     cancelUrl: `${env.FRONTEND_URL}/dashboard`,
-    notifyUrl: `${env.BACKEND_URL}/api/payments/webhook`,
+    notifyUrl: `${env.BACKEND_URL}/payments/webhook`,
   });
 
   res.status(201).json({

@@ -51,7 +51,7 @@ router.post("/initiate", authenticate, validate(initiatePaymentSchema), async (r
     itemName: `AWDelivery ${order.trackingNumber}`,
     returnUrl: `${env.FRONTEND_URL}/dashboard`,
     cancelUrl: `${env.FRONTEND_URL}/dashboard`,
-    notifyUrl: `${env.BACKEND_URL}/api/payments/webhook`,
+    notifyUrl: `${env.BACKEND_URL}/payments/webhook`,
   });
 
   res.json({ 
