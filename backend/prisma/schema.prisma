@@ -40,6 +40,7 @@ enum NotificationTemplateType {
   DELAY_ALERT
   OTP_VERIFICATION
   DRIVER_ASSIGNMENT
+  ADMIN_NEW_ORDER
 }
 
 enum VehicleType {

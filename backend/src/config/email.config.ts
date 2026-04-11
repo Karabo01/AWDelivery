@@ -5,6 +5,8 @@ interface EmailTemplate {
   html: string;
 }
 
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://awdelivery.co.za:5173";
+
 export function getEmailTemplate(
   templateType: NotificationTemplateType,
   data: Record<string, string>,
@@ -64,6 +66,11 @@ export function getEmailTemplate(
       return {
         subject: `New Delivery Assignment — ${data.trackingNumber || ""}`,
         html: driverAssignmentTemplate(data),
+      };
+    case "ADMIN_NEW_ORDER":
+      return {
+        subject: `Action Required \u2014 Order ${data.trackingNumber || ""} Needs a Driver`,
+        html: adminNewOrderTemplate(data),
       };
     default:
       return {
@@ -162,6 +169,25 @@ function driverAssignmentTemplate(data: Record<string, string>): string {
         <td style="padding:8px 0;">${data.deliveryAddress || "N/A"}</td>
       </tr>
     </table>
+  `);
+}
+
+function adminNewOrderTemplate(data: Record<string, string>): string {
+  const loginUrl = `${FRONTEND_URL}/login`;
+  return baseLayout(`
+    <h2 style="margin:0 0 8px;font-size:18px;color:#18181b;">Order Confirmed \u2014 Driver Needed</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:#52525b;line-height:1.5;">
+      A new order <strong>${data.trackingNumber || "N/A"}</strong> has been placed and payment has been confirmed.
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;color:#52525b;line-height:1.5;">
+      Please log in to the admin dashboard and assign a driver for this delivery.
+    </p>
+    <div style="text-align:center;margin-bottom:24px;">
+      <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#18181b;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">Log in &amp; Assign Driver</a>
+    </div>
+    <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.5;">
+      This is an automated notification. If the driver has already been assigned, you can ignore this email.
+    </p>
   `);
 }
 

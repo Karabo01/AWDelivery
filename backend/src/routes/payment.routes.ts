@@ -161,7 +161,7 @@ router.post("/webhook", async (req, res) => {
       for (const admin of admins) {
         sendNotificationEmail(
           admin.email,
-          "ORDER_CONFIRMATION" as any,
+          "ADMIN_NEW_ORDER" as any,
           { trackingNumber: order.trackingNumber },
           orderId,
         ).catch((err) =>
