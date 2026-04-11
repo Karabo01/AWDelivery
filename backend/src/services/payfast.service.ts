@@ -113,18 +113,18 @@ export function validatePayFastSignature(
   if (!receivedSignature) return false;
 
   // Build param string from ALL fields except signature, in received order.
-  // PayFast ITN validation uses RAW values (not URL-encoded).
+  // Per PayFast docs: URL-encode each value, spaces as '+'.
   let pfParamString = "";
   for (const key of Object.keys(payload)) {
     if (key !== "signature") {
-      pfParamString += `${key}=${(payload[key] ?? "").trim()}&`;
+      pfParamString += `${key}=${encodeURIComponent((payload[key] ?? "").trim()).replace(/%20/g, "+")}&`;
     }
   }
   pfParamString = pfParamString.slice(0, -1);
 
   const passPhrase = env.PAYFAST_PASSPHRASE || null;
   if (passPhrase) {
-    pfParamString += `&passphrase=${passPhrase.trim()}`;
+    pfParamString += `&passphrase=${encodeURIComponent(passPhrase.trim()).replace(/%20/g, "+")}`;
   }
 
   const computedSignature = crypto.createHash("md5").update(pfParamString).digest("hex");
@@ -133,6 +133,9 @@ export function validatePayFastSignature(
     received: receivedSignature,
     computed: computedSignature,
     match: computedSignature === receivedSignature,
+    hasPassphrase: !!passPhrase,
+    passphraseValue: passPhrase ? `${passPhrase.substring(0, 3)}***` : "(none)",
+    paramString: pfParamString,
   });
 
   return computedSignature === receivedSignature;
