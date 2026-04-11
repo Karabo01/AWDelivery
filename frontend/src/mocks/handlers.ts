@@ -67,6 +67,7 @@ const sampleOrder: Order = {
 	quoteAmount: 8500,
 	paymentStatus: PaymentStatus.PAID,
 	receiverPhone: '+27823456789',
+	receiverEmail: 'receiver@example.com',
 	createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
 	updatedAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
 }
@@ -364,6 +365,7 @@ export const handlers: RequestHandler[] = [
 			quoteAmount: quoted.amount,
 			paymentStatus: PaymentStatus.PENDING,
 			receiverPhone: body.receiverPhone,
+			receiverEmail: body.receiverEmail,
 			createdAt: now,
 			updatedAt: now,
 		}

@@ -52,7 +52,7 @@ router.post("/quote", authenticate, validate(quoteRequestSchema), async (req, re
 // ─── POST /orders ────────────────────────────────────────────────────────────
 
 router.post("/", authenticate, validate(createOrderSchema), async (req, res) => {
-  const { pickupAddress, deliveryAddress, parcelDetails, receiverPhone, quoteToken } =
+  const { pickupAddress, deliveryAddress, parcelDetails, receiverPhone, receiverEmail, quoteToken } =
     req.body;
 
   // Verify quote token
@@ -80,6 +80,7 @@ router.post("/", authenticate, validate(createOrderSchema), async (req, res) => 
       quoteAmount: quoteData.amount,
       paymentStatus: PaymentStatus.PENDING,
       receiverPhone,
+      receiverEmail,
       createdAt: now,
       updatedAt: now,
       timeline: {
@@ -189,6 +190,7 @@ function formatOrder(order: any) {
     quoteAmount: order.quoteAmount,
     paymentStatus: order.paymentStatus,
     receiverPhone: order.receiverPhone,
+    receiverEmail: order.receiverEmail,
     createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
     updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
   };

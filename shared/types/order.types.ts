@@ -59,6 +59,7 @@ export interface Order {
   readonly paymentStatus: PaymentStatus;
   /** Phone number of the parcel receiver in E.164 format */
   readonly receiverPhone: string;
+  readonly receiverEmail: string;
   readonly createdAt: string;
   readonly updatedAt: string;
 }

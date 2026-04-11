@@ -184,7 +184,7 @@ router.post(
 
     if (recipient === "receiver" || recipient === "both") {
       const log = await sendNotificationEmail(
-        order.receiverPhone,
+        order.receiverEmail,
         templateType,
         { trackingNumber: order.trackingNumber },
         order.id,
@@ -459,6 +459,7 @@ function formatOrder(order: any) {
     quoteAmount: order.quoteAmount,
     paymentStatus: order.paymentStatus,
     receiverPhone: order.receiverPhone,
+    receiverEmail: order.receiverEmail,
     createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
     updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
   };

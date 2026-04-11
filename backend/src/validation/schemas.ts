@@ -67,6 +67,7 @@ export const createOrderSchema = z.object({
   deliveryAddress: addressSchema,
   parcelDetails: parcelDetailsSchema,
   receiverPhone: phoneSchema,
+  receiverEmail: z.string().email().max(255),
   quoteToken: z.string().min(1),
 });
 

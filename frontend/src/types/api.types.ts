@@ -64,6 +64,7 @@ export interface CreateOrderRequest {
   readonly deliveryAddress: Address
   readonly parcelDetails: ParcelDetails
   readonly receiverPhone: string
+  readonly receiverEmail: string
   readonly quoteToken: string
 }
 

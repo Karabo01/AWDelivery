@@ -94,6 +94,7 @@ model Order {
   quoteAmount     Int
   paymentStatus   PaymentStatus @default(PENDING)
   receiverPhone   String
+  receiverEmail   String        @default("")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

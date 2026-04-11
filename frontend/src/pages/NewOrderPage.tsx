@@ -40,6 +40,7 @@ const wizardSchema = z.object({
   receiverPhone: z
     .string()
     .refine(isValidSaE164, 'Receiver phone must be in +27XXXXXXXXX format.'),
+  receiverEmail: z.string().email('Enter a valid email address.').max(255),
 })
 
 type WizardFormInput = z.input<typeof wizardSchema>
@@ -92,6 +93,7 @@ function NewOrderPage() {
       parcelDescription: '',
       parcelWeightKg: 1,
       receiverPhone: '+27',
+      receiverEmail: '',
     },
   })
 
@@ -142,6 +144,7 @@ function NewOrderPage() {
       'parcelSize',
       'parcelWeightKg',
       'receiverPhone',
+      'receiverEmail',
     ])
 
     if (!valid) {
@@ -214,6 +217,7 @@ function NewOrderPage() {
           description: values.parcelDescription,
         },
         receiverPhone: values.receiverPhone,
+        receiverEmail: values.receiverEmail,
         quoteToken,
       })
 
@@ -287,7 +291,7 @@ function NewOrderPage() {
           <CardHeader>
             <CardTitle>Step 2: Delivery and parcel details</CardTitle>
             <CardDescription>
-              Search for the delivery location, select parcel size, and enter receiver phone.
+              Search for the delivery location, select parcel size, and enter receiver details.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -348,6 +352,20 @@ function NewOrderPage() {
                   <p className="text-sm text-destructive">{form.formState.errors.receiverPhone.message}</p>
                 )}
               </div>
+              <div className="space-y-2">
+                <Label>Receiver email</Label>
+                <Input
+                  type="email"
+                  placeholder="receiver@example.com"
+                  {...form.register('receiverEmail')}
+                />
+                {form.formState.errors.receiverEmail && (
+                  <p className="text-sm text-destructive">{form.formState.errors.receiverEmail.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Parcel weight (kg)</Label>
                 <Input type="number" step="0.1" min="0.1" {...form.register('parcelWeightKg')} />

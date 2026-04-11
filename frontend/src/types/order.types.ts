@@ -55,6 +55,7 @@ export interface Order {
   readonly quoteAmount: number
   readonly paymentStatus: PaymentStatus
   readonly receiverPhone: string
+  readonly receiverEmail: string
   readonly createdAt: string
   readonly updatedAt: string
 }

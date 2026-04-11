@@ -71,6 +71,7 @@ export interface CreateOrderRequest {
   readonly parcelDetails: ParcelDetails;
   /** Receiver phone in E.164 format */
   readonly receiverPhone: string;
+  readonly receiverEmail: string;
   /** Token returned by POST /api/orders/quote */
   readonly quoteToken: string;
 }
