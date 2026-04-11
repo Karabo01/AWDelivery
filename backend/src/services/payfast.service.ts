@@ -113,20 +113,27 @@ export function validatePayFastSignature(
   if (!receivedSignature) return false;
 
   // Build param string from ALL fields except signature, in received order.
-  // Unlike outgoing signatures, ITN validation must include empty values.
+  // PayFast ITN validation uses RAW values (not URL-encoded).
   let pfParamString = "";
   for (const key of Object.keys(payload)) {
     if (key !== "signature") {
-      pfParamString += `${key}=${encodeURIComponent((payload[key] ?? "").trim()).replace(/%20/g, "+")}&`;
+      pfParamString += `${key}=${(payload[key] ?? "").trim()}&`;
     }
   }
   pfParamString = pfParamString.slice(0, -1);
 
   const passPhrase = env.PAYFAST_PASSPHRASE || null;
   if (passPhrase) {
-    pfParamString += `&passphrase=${encodeURIComponent(passPhrase.trim()).replace(/%20/g, "+")}`;
+    pfParamString += `&passphrase=${passPhrase.trim()}`;
   }
 
   const computedSignature = crypto.createHash("md5").update(pfParamString).digest("hex");
+
+  console.log("[PayFast] Signature validation:", {
+    received: receivedSignature,
+    computed: computedSignature,
+    match: computedSignature === receivedSignature,
+  });
+
   return computedSignature === receivedSignature;
 }
