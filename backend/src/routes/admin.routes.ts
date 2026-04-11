@@ -117,7 +117,10 @@ router.patch(
       note?: string;
     };
 
-    const order = await prisma.order.findUnique({ where: { id } });
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { sender: { select: { name: true, surname: true } } },
+    });
 
     if (!order) {
       throw new AppError("Order not found", "ORDER_NOT_FOUND", 404);
@@ -144,6 +147,19 @@ router.patch(
         },
       }),
     ]);
+
+    // Auto-notify receiver when order moves to IN_TRANSIT
+    if (newStatus === "IN_TRANSIT" && order.receiverEmail) {
+      const senderName = `${order.sender.name} ${order.sender.surname}`;
+      sendNotificationEmail(
+        order.receiverEmail,
+        "IN_TRANSIT" as any,
+        { trackingNumber: order.trackingNumber, senderName },
+        id,
+      ).catch((err) =>
+        console.error(`[Email] Failed to send in-transit notification to receiver:`, err),
+      );
+    }
 
     res.json({ order: formatOrder(updatedOrder) });
   },

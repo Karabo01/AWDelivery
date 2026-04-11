@@ -41,10 +41,7 @@ export function getEmailTemplate(
     case "IN_TRANSIT":
       return {
         subject: `Parcel In Transit — ${data.trackingNumber || ""}`,
-        html: simpleNotificationTemplate(
-          "Parcel In Transit",
-          `Your order <strong>${data.trackingNumber}</strong> is now in transit.${data.estimatedDelivery ? ` Estimated delivery: ${data.estimatedDelivery}.` : ""}`,
-        ),
+        html: inTransitTemplate(data),
       };
     case "DELIVERED":
       return {
@@ -169,6 +166,36 @@ function driverAssignmentTemplate(data: Record<string, string>): string {
         <td style="padding:8px 0;">${data.deliveryAddress || "N/A"}</td>
       </tr>
     </table>
+  `);
+}
+
+function inTransitTemplate(data: Record<string, string>): string {
+  return baseLayout(`
+    <h2 style="margin:0 0 8px;font-size:18px;color:#18181b;">Your Parcel Is On Its Way!</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:#52525b;line-height:1.5;">
+      A parcel sent by <strong>${data.senderName || "the sender"}</strong> is now in transit and heading your way.
+    </p>
+    <div style="padding:16px;background-color:#f4f4f5;border-radius:8px;margin-bottom:16px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;color:#52525b;line-height:1.6;">
+        <tr>
+          <td style="padding:4px 0;"><strong>Tracking Number</strong></td>
+          <td style="padding:4px 0;text-align:right;"><strong>${data.trackingNumber || "N/A"}</strong></td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;"><strong>Sender</strong></td>
+          <td style="padding:4px 0;text-align:right;">${data.senderName || "N/A"}</td>
+        </tr>
+      </table>
+    </div>
+    <p style="margin:0 0 16px;font-size:14px;color:#52525b;line-height:1.5;">
+      If you need any assistance, please don\u2019t hesitate to contact us:
+    </p>
+    <p style="margin:0 0 4px;font-size:14px;color:#52525b;">
+      \ud83d\udcde <a href="tel:+27823855533" style="color:#18181b;text-decoration:none;font-weight:600;">082 385 5533</a>
+    </p>
+    <p style="margin:0;font-size:14px;color:#52525b;">
+      \u2709\ufe0f <a href="mailto:orders@awdelivery.co.za" style="color:#18181b;text-decoration:none;font-weight:600;">orders@awdelivery.co.za</a>
+    </p>
   `);
 }
 
