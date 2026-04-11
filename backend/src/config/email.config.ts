@@ -63,10 +63,7 @@ export function getEmailTemplate(
     case "DRIVER_ASSIGNMENT":
       return {
         subject: `New Delivery Assignment — ${data.trackingNumber || ""}`,
-        html: simpleNotificationTemplate(
-          "New Delivery Assignment",
-          `You have been assigned order <strong>${data.trackingNumber}</strong>.<br>Pickup: ${data.pickupAddress || "N/A"}<br>Delivery: ${data.deliveryAddress || "N/A"}`,
-        ),
+        html: driverAssignmentTemplate(data),
       };
     default:
       return {
@@ -138,6 +135,33 @@ function orderConfirmationTemplate(trackingNumber: string): string {
     <p style="margin:0;font-size:14px;color:#52525b;line-height:1.5;">
       You can track your delivery at any time using the tracking page on our website.
     </p>
+  `);
+}
+
+function driverAssignmentTemplate(data: Record<string, string>): string {
+  return baseLayout(`
+    <h2 style="margin:0 0 8px;font-size:18px;color:#18181b;">New Delivery Assignment</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:#52525b;line-height:1.5;">
+      You have been assigned order <strong>${data.trackingNumber || "N/A"}</strong>.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;font-size:14px;color:#52525b;line-height:1.6;">
+      <tr>
+        <td style="padding:8px 0;border-bottom:1px solid #e4e4e7;"><strong>Sender</strong></td>
+        <td style="padding:8px 0;border-bottom:1px solid #e4e4e7;">${data.senderName || "N/A"} — ${data.senderPhone || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;border-bottom:1px solid #e4e4e7;"><strong>Receiver Phone</strong></td>
+        <td style="padding:8px 0;border-bottom:1px solid #e4e4e7;">${data.receiverPhone || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;border-bottom:1px solid #e4e4e7;"><strong>Pickup</strong></td>
+        <td style="padding:8px 0;border-bottom:1px solid #e4e4e7;">${data.pickupAddress || "N/A"}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;"><strong>Delivery</strong></td>
+        <td style="padding:8px 0;">${data.deliveryAddress || "N/A"}</td>
+      </tr>
+    </table>
   `);
 }
 

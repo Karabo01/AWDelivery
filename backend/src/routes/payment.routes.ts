@@ -155,6 +155,19 @@ router.post("/webhook", async (req, res) => {
           console.error("[Email] Failed to send confirmation:", err),
         );
       }
+
+      // Notify all admin users about the new confirmed order
+      const admins = await prisma.user.findMany({ where: { isAdmin: true }, select: { email: true } });
+      for (const admin of admins) {
+        sendNotificationEmail(
+          admin.email,
+          "ORDER_CONFIRMATION" as any,
+          { trackingNumber: order.trackingNumber },
+          orderId,
+        ).catch((err) =>
+          console.error(`[Email] Failed to send admin notification to ${admin.email}:`, err),
+        );
+      }
     } else {
       // CANCELLED or FAILED
       await prisma.$transaction([

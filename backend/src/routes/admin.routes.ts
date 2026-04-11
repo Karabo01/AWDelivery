@@ -208,7 +208,10 @@ router.patch(
     const id = req.params.id as string;
     const { driverId } = req.body as { driverId: string | null };
 
-    const order = await prisma.order.findUnique({ where: { id } });
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { sender: { select: { name: true, surname: true, phone: true } } },
+    });
 
     if (!order) {
       throw new AppError("Order not found", "ORDER_NOT_FOUND", 404);
@@ -229,6 +232,29 @@ router.patch(
       data: { driverId },
       include: { driver: true },
     });
+
+    // Send assignment email to the driver (fire and forget)
+    if (driverId && updatedOrder.driver?.email) {
+      const pickupAddr = order.pickupAddress as any;
+      const deliveryAddr = order.deliveryAddress as any;
+      const pickup = [pickupAddr?.street, pickupAddr?.suburb, pickupAddr?.city].filter(Boolean).join(", ") || "See order details";
+      const delivery = [deliveryAddr?.street, deliveryAddr?.suburb, deliveryAddr?.city].filter(Boolean).join(", ") || "See order details";
+      sendNotificationEmail(
+        updatedOrder.driver.email,
+        "DRIVER_ASSIGNMENT" as any,
+        {
+          trackingNumber: order.trackingNumber,
+          senderName: `${order.sender.name} ${order.sender.surname}`,
+          senderPhone: order.sender.phone,
+          receiverPhone: order.receiverPhone,
+          pickupAddress: pickup,
+          deliveryAddress: delivery,
+        },
+        order.id,
+      ).catch((err) =>
+        console.error(`[Email] Failed to send driver assignment to ${updatedOrder.driver!.email}:`, err),
+      );
+    }
 
     res.json({ order: formatOrderWithDriver(updatedOrder) });
   },
