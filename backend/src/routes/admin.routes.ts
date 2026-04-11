@@ -161,6 +161,23 @@ router.patch(
       );
     }
 
+    // Auto-notify receiver when order is delivered
+    if (newStatus === "DELIVERED" && order.receiverEmail) {
+      const senderName = `${order.sender.name} ${order.sender.surname}`;
+      const pickupAddr = order.pickupAddress as any;
+      const deliveryAddr = order.deliveryAddress as any;
+      const pickup = [pickupAddr?.street, pickupAddr?.suburb, pickupAddr?.city].filter(Boolean).join(", ") || "N/A";
+      const delivery = [deliveryAddr?.street, deliveryAddr?.suburb, deliveryAddr?.city].filter(Boolean).join(", ") || "N/A";
+      sendNotificationEmail(
+        order.receiverEmail,
+        "DELIVERED" as any,
+        { trackingNumber: order.trackingNumber, senderName, pickupAddress: pickup, deliveryAddress: delivery },
+        id,
+      ).catch((err) =>
+        console.error(`[Email] Failed to send delivered notification to receiver:`, err),
+      );
+    }
+
     res.json({ order: formatOrder(updatedOrder) });
   },
 );

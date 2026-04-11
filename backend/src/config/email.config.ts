@@ -46,10 +46,7 @@ export function getEmailTemplate(
     case "DELIVERED":
       return {
         subject: `Parcel Delivered — ${data.trackingNumber || ""}`,
-        html: simpleNotificationTemplate(
-          "Parcel Delivered",
-          `Your order <strong>${data.trackingNumber}</strong> has been successfully delivered. Thank you for using AWDelivery!`,
-        ),
+        html: deliveredTemplate(data),
       };
     case "DELAY_ALERT":
       return {
@@ -166,6 +163,44 @@ function driverAssignmentTemplate(data: Record<string, string>): string {
         <td style="padding:8px 0;">${data.deliveryAddress || "N/A"}</td>
       </tr>
     </table>
+  `);
+}
+
+function deliveredTemplate(data: Record<string, string>): string {
+  return baseLayout(`
+    <h2 style="margin:0 0 8px;font-size:18px;color:#18181b;">Delivery Confirmed</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:#52525b;line-height:1.5;">
+      Great news! Your parcel has been successfully delivered.
+    </p>
+    <div style="padding:16px;background-color:#f4f4f5;border-radius:8px;margin-bottom:16px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;color:#52525b;line-height:1.8;">
+        <tr>
+          <td><strong>Tracking Number</strong></td>
+          <td style="text-align:right;"><strong>${data.trackingNumber || "N/A"}</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Sender</strong></td>
+          <td style="text-align:right;">${data.senderName || "N/A"}</td>
+        </tr>
+        <tr>
+          <td><strong>Pickup</strong></td>
+          <td style="text-align:right;">${data.pickupAddress || "N/A"}</td>
+        </tr>
+        <tr>
+          <td><strong>Delivered To</strong></td>
+          <td style="text-align:right;">${data.deliveryAddress || "N/A"}</td>
+        </tr>
+      </table>
+    </div>
+    <p style="margin:0 0 16px;font-size:14px;color:#52525b;line-height:1.5;">
+      Thank you for using AWDelivery! If you have any questions, contact us:
+    </p>
+    <p style="margin:0 0 4px;font-size:14px;color:#52525b;">
+      \ud83d\udcde <a href="tel:+27823855533" style="color:#18181b;text-decoration:none;font-weight:600;">082 385 5533</a>
+    </p>
+    <p style="margin:0;font-size:14px;color:#52525b;">
+      \u2709\ufe0f <a href="mailto:orders@awdelivery.co.za" style="color:#18181b;text-decoration:none;font-weight:600;">orders@awdelivery.co.za</a>
+    </p>
   `);
 }
 
