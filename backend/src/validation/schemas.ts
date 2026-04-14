@@ -54,6 +54,16 @@ export const resendOtpSchema = z.object({
   email: z.string().email(),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6),
+  newPassword: z.string().min(8, "Password must be at least 8 characters").max(128),
+});
+
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 export const quoteRequestSchema = z.object({

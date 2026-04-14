@@ -138,6 +138,7 @@ model Otp {
   id        String   @id @default(uuid()) @db.Uuid
   email     String
   code      String
+  purpose   String   @default("verification")
   expiresAt DateTime
   createdAt DateTime @default(now())
 

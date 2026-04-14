@@ -5,6 +5,7 @@ import Navbar from '@/components/shared/Navbar'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import AdminPage from '@/pages/admin/AdminPage'
 import DashboardPage from '@/pages/DashboardPage'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import NewOrderPage from '@/pages/NewOrderPage'
@@ -27,6 +28,7 @@ function App() {
           <Routes>
             <Route path="/" element={null} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route
               path="/order/new"

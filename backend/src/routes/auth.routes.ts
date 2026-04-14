@@ -10,6 +10,8 @@ import {
   loginSchema,
   verifyOtpSchema,
   resendOtpSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from "../validation/schemas.js";
 import { AppError } from "../utils/errors.js";
 import { sendOtpEmail } from "../services/email.service.js";
@@ -33,11 +35,11 @@ function formatUser(user: any) {
   };
 }
 
-async function generateAndSendOtp(email: string) {
+async function generateAndSendOtp(email: string, purpose: string = "verification") {
   // Rate limit: max 3 OTPs per email in 5 minutes
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
   const recentCount = await prisma.otp.count({
-    where: { email, createdAt: { gte: fiveMinutesAgo } },
+    where: { email, purpose, createdAt: { gte: fiveMinutesAgo } },
   });
 
   if (recentCount >= 3) {
@@ -47,7 +49,7 @@ async function generateAndSendOtp(email: string) {
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  await prisma.otp.create({ data: { email, code, expiresAt } });
+  await prisma.otp.create({ data: { email, code, purpose, expiresAt } });
 
   await sendOtpEmail(email, code);
 }
@@ -137,7 +139,7 @@ router.post("/verify-otp", validate(verifyOtpSchema), async (req, res) => {
   const { email, code } = req.body as { email: string; code: string };
 
   const otp = await prisma.otp.findFirst({
-    where: { email, code, expiresAt: { gt: new Date() } },
+    where: { email, code, purpose: "verification", expiresAt: { gt: new Date() } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -188,6 +190,56 @@ router.post("/resend-otp", validate(resendOtpSchema), async (req, res) => {
   await generateAndSendOtp(email);
 
   res.json({ message: "If an account exists, an OTP has been sent." });
+});
+
+// ─── POST /auth/forgot-password ─────────────────────────────────────────────
+
+router.post("/forgot-password", validate(forgotPasswordSchema), async (req, res) => {
+  const { email } = req.body as { email: string };
+
+  // Anti-enumeration: always return success
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user) {
+    await generateAndSendOtp(email, "password-reset");
+  }
+
+  res.json({ message: "If an account exists, a reset code has been sent to your email." });
+});
+
+// ─── POST /auth/reset-password ──────────────────────────────────────────────
+
+router.post("/reset-password", validate(resetPasswordSchema), async (req, res) => {
+  const { email, code, newPassword } = req.body as {
+    email: string;
+    code: string;
+    newPassword: string;
+  };
+
+  const otp = await prisma.otp.findFirst({
+    where: { email, code, purpose: "password-reset", expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!otp) {
+    throw new AppError("OTP is invalid or expired", "INVALID_OTP", 400);
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    throw new AppError("OTP is invalid or expired", "INVALID_OTP", 400);
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { email },
+      data: { password: hashedPassword, isVerified: true },
+    }),
+    prisma.otp.deleteMany({ where: { email } }),
+  ]);
+
+  res.json({ message: "Password has been reset successfully. You can now log in." });
 });
 
 // ─── POST /auth/logout ──────────────────────────────────────────────────────

@@ -122,6 +122,14 @@ function LoginPage() {
                     {loginForm.formState.errors.password.message}
                   </p>
                 ) : null}
+                <div className="text-right">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
 
               {serverError ? (

@@ -8,6 +8,10 @@ import type {
 	ResendOtpResponse,
 	VerifyOtpRequest,
 	VerifyOtpResponse,
+	ForgotPasswordRequest,
+	ForgotPasswordResponse,
+	ResetPasswordRequest,
+	ResetPasswordResponse,
 } from '@/types'
 import type { User } from '@/types/user.types'
 
@@ -49,4 +53,14 @@ async function logout() {
 	return data
 }
 
-export { getCurrentUser, login, logout, register, resendOtp, verifyOtp }
+async function forgotPassword(payload: ForgotPasswordRequest) {
+	const { data } = await api.post<ForgotPasswordResponse>('/auth/forgot-password', payload)
+	return data
+}
+
+async function resetPassword(payload: ResetPasswordRequest) {
+	const { data } = await api.post<ResetPasswordResponse>('/auth/reset-password', payload)
+	return data
+}
+
+export { getCurrentUser, forgotPassword, login, logout, register, resendOtp, resetPassword, verifyOtp }

@@ -40,6 +40,24 @@ export interface ResendOtpResponse {
   readonly message: string
 }
 
+export interface ForgotPasswordRequest {
+  readonly email: string
+}
+
+export interface ForgotPasswordResponse {
+  readonly message: string
+}
+
+export interface ResetPasswordRequest {
+  readonly email: string
+  readonly code: string
+  readonly newPassword: string
+}
+
+export interface ResetPasswordResponse {
+  readonly message: string
+}
+
 export interface QuoteRequest {
   readonly pickupAddress: Address
   readonly deliveryAddress: Address
