@@ -63,9 +63,9 @@ function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="space-y-14 py-6 sm:py-8">
+    <div className="space-y-14">
       <section 
-        className="animate-enter relative overflow-hidden rounded-[2rem] p-8 sm:p-12"
+        className="animate-enter relative overflow-hidden p-8 sm:p-12 lg:p-16"
         style={{
           backgroundImage: `url(${heroCourierMoment})`,
           backgroundSize: 'cover',
@@ -119,6 +119,7 @@ function LandingPage() {
         </div>
       </section>
 
+      <div className="mx-auto w-full max-w-6xl space-y-14 px-4 py-8 sm:px-6 sm:py-10">
       <section className="animate-enter animate-delay-2 grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
         <div className="space-y-4">
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">Why it lands</p>
@@ -232,6 +233,7 @@ function LandingPage() {
           </Button>
         </div>
       </section>
+      </div>
     </div>
   )
 }

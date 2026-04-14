@@ -20,9 +20,12 @@ function App() {
           className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-primary/10 via-transparent to-transparent"
         />
         <Navbar />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+        </Routes>
         <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={null} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route

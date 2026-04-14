@@ -15,7 +15,7 @@ function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-md">
-      <div className="mx-auto flex h-[5.5rem] w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-[5.5rem] w-full items-center justify-between px-4 sm:px-6 lg:px-10">
         <Link to="/" className="inline-flex items-center" aria-label="AWDelivery home">
           <img src={logoImage} alt="AWDelivery" className="h-[7rem] w-auto sm:h-[8rem]" />
         </Link>
