@@ -143,30 +143,40 @@ router.post("/webhook", async (req, res) => {
 
       console.log(`[PayFast] Order ${orderId} marked PAID + CONFIRMED`);
 
-      // Send email confirmation (fire and forget)
+      // Send email confirmation to sender
       const sender = await prisma.user.findUnique({ where: { id: order.senderId }, select: { email: true } });
+      console.log(`[PayFast] Sender lookup for ${order.senderId}: ${sender ? `email=${sender.email}` : "NOT FOUND"}`);
+
       if (sender?.email) {
-        sendNotificationEmail(
-          sender.email,
-          "ORDER_CONFIRMATION" as any,
-          { trackingNumber: order.trackingNumber },
-          orderId,
-        ).catch((err) =>
-          console.error("[Email] Failed to send confirmation:", err),
-        );
+        try {
+          const result = await sendNotificationEmail(
+            sender.email,
+            "ORDER_CONFIRMATION" as any,
+            { trackingNumber: order.trackingNumber },
+            orderId,
+          );
+          console.log(`[PayFast] ORDER_CONFIRMATION result:`, result);
+        } catch (err) {
+          console.error(`[PayFast] ORDER_CONFIRMATION error:`, err);
+        }
       }
 
       // Notify all admin users about the new confirmed order
       const admins = await prisma.user.findMany({ where: { isAdmin: true }, select: { email: true } });
+      console.log(`[PayFast] Found ${admins.length} admin(s):`, admins.map(a => a.email));
+
       for (const admin of admins) {
-        sendNotificationEmail(
-          admin.email,
-          "ADMIN_NEW_ORDER" as any,
-          { trackingNumber: order.trackingNumber },
-          orderId,
-        ).catch((err) =>
-          console.error(`[Email] Failed to send admin notification to ${admin.email}:`, err),
-        );
+        try {
+          const result = await sendNotificationEmail(
+            admin.email,
+            "ADMIN_NEW_ORDER" as any,
+            { trackingNumber: order.trackingNumber },
+            orderId,
+          );
+          console.log(`[PayFast] ADMIN_NEW_ORDER to ${admin.email} result:`, result);
+        } catch (err) {
+          console.error(`[PayFast] ADMIN_NEW_ORDER to ${admin.email} error:`, err);
+        }
       }
     } else {
       // CANCELLED or FAILED

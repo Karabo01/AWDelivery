@@ -59,17 +59,21 @@ export async function sendNotificationEmail(
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`[Email] Failed to send ${templateType} to ${recipientEmail}:`, errorMessage);
 
-    const log = await prisma.notificationLog.create({
-      data: {
-        orderId,
-        recipientEmail,
-        messageType: templateType,
-        content: JSON.stringify({ templateType, data, error: errorMessage }),
-        deliveryStatus: "failed",
-      },
-    });
-
-    return { id: log.id, deliveryStatus: "failed" };
+    try {
+      const log = await prisma.notificationLog.create({
+        data: {
+          orderId,
+          recipientEmail,
+          messageType: templateType,
+          content: JSON.stringify({ templateType, data, error: errorMessage }),
+          deliveryStatus: "failed",
+        },
+      });
+      return { id: log.id, deliveryStatus: "failed" };
+    } catch (dbError) {
+      console.error(`[Email] Also failed to write notification log to DB:`, dbError instanceof Error ? dbError.message : String(dbError));
+      return { id: "unknown", deliveryStatus: "failed" };
+    }
   }
 }
 
