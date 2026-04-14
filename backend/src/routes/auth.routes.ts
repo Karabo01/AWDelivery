@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomInt } from "crypto";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import prisma from "../lib/prisma.js";
@@ -18,6 +19,42 @@ import { sendOtpEmail } from "../services/email.service.js";
 
 const SALT_ROUNDS = 12;
 const router = Router();
+
+// ─── In-memory brute-force tracking ──────────────────────────────────────────
+
+interface AttemptRecord {
+  count: number;
+  lockedUntil: number;
+}
+
+const loginAttempts = new Map<string, AttemptRecord>();
+const otpAttempts = new Map<string, AttemptRecord>();
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const MAX_OTP_ATTEMPTS = 5;
+const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkAttempts(map: Map<string, AttemptRecord>, key: string, label: string): void {
+  const record = map.get(key);
+  if (record && record.lockedUntil > Date.now()) {
+    const minutesLeft = Math.ceil((record.lockedUntil - Date.now()) / 60000);
+    throw new AppError(
+      `Too many failed ${label} attempts. Try again in ${minutesLeft} minute(s).`,
+      "RATE_LIMITED",
+      429,
+    );
+  }
+}
+
+function recordFailure(map: Map<string, AttemptRecord>, key: string, maxAttempts: number): void {
+  const record = map.get(key) || { count: 0, lockedUntil: 0 };
+  if (record.lockedUntil < Date.now()) record.count = 0;
+  record.count++;
+  if (record.count >= maxAttempts) {
+    record.lockedUntil = Date.now() + LOCK_DURATION_MS;
+  }
+  map.set(key, record);
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -46,7 +83,7 @@ async function generateAndSendOtp(email: string, purpose: string = "verification
     throw new AppError("Too many OTP requests — try again later", "RATE_LIMITED", 429);
   }
 
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = String(randomInt(100000, 1000000));
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   await prisma.otp.create({ data: { email, code, purpose, expiresAt } });
@@ -94,16 +131,24 @@ router.post("/register", validate(registerSchema), async (req, res) => {
 router.post("/login", validate(loginSchema), async (req, res) => {
   const { email, password } = req.body as { email: string; password: string };
 
+  // Brute-force protection
+  checkAttempts(loginAttempts, email, "login");
+
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
+    recordFailure(loginAttempts, email, MAX_LOGIN_ATTEMPTS);
     throw new AppError("Invalid email or password", "INVALID_CREDENTIALS", 401);
   }
 
   const passwordMatch = await bcrypt.compare(password, user.password);
   if (!passwordMatch) {
+    recordFailure(loginAttempts, email, MAX_LOGIN_ATTEMPTS);
     throw new AppError("Invalid email or password", "INVALID_CREDENTIALS", 401);
   }
+
+  // Clear failed attempts on successful login
+  loginAttempts.delete(email);
 
   if (!user.isVerified) {
     // Re-send OTP so the user can verify
@@ -138,14 +183,21 @@ router.post("/login", validate(loginSchema), async (req, res) => {
 router.post("/verify-otp", validate(verifyOtpSchema), async (req, res) => {
   const { email, code } = req.body as { email: string; code: string };
 
+  // OTP attempt limiting
+  checkAttempts(otpAttempts, email, "OTP");
+
   const otp = await prisma.otp.findFirst({
     where: { email, code, purpose: "verification", expiresAt: { gt: new Date() } },
     orderBy: { createdAt: "desc" },
   });
 
   if (!otp) {
+    recordFailure(otpAttempts, email, MAX_OTP_ATTEMPTS);
     throw new AppError("OTP is invalid or expired", "INVALID_OTP", 400);
   }
+
+  // Clear OTP attempt tracking
+  otpAttempts.delete(email);
 
   // Clean up OTPs
   await prisma.otp.deleteMany({ where: { email } });
@@ -215,14 +267,21 @@ router.post("/reset-password", validate(resetPasswordSchema), async (req, res) =
     newPassword: string;
   };
 
+  // OTP attempt limiting
+  checkAttempts(otpAttempts, email, "OTP");
+
   const otp = await prisma.otp.findFirst({
     where: { email, code, purpose: "password-reset", expiresAt: { gt: new Date() } },
     orderBy: { createdAt: "desc" },
   });
 
   if (!otp) {
+    recordFailure(otpAttempts, email, MAX_OTP_ATTEMPTS);
     throw new AppError("OTP is invalid or expired", "INVALID_OTP", 400);
   }
+
+  // Clear OTP attempt tracking
+  otpAttempts.delete(email);
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
@@ -234,7 +293,7 @@ router.post("/reset-password", validate(resetPasswordSchema), async (req, res) =
   await prisma.$transaction([
     prisma.user.update({
       where: { email },
-      data: { password: hashedPassword, isVerified: true },
+      data: { password: hashedPassword, isVerified: true, passwordChangedAt: new Date() },
     }),
     prisma.otp.deleteMany({ where: { email } }),
   ]);

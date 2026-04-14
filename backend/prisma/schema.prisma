@@ -60,6 +60,7 @@ model User {
   isVerified     Boolean  @default(false)
   defaultAddress Json?
   isAdmin        Boolean  @default(false)
+  passwordChangedAt DateTime?
   createdAt      DateTime @default(now())
 
   orders Order[]

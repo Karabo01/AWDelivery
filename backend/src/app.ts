@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { env } from "./lib/env.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -13,6 +15,12 @@ import healthRoutes from "./routes/health.routes.js";
 export function createApp() {
   const app = express();
 
+  // ─── Trust proxy (behind reverse proxy / load balancer) ──────────────────────
+  app.set("trust proxy", 1);
+
+  // ─── Security headers ────────────────────────────────────────────────────────
+  app.use(helmet());
+
   // ─── Global middleware ───────────────────────────────────────────────────────
 
   app.use(
@@ -22,9 +30,20 @@ export function createApp() {
     }),
   );
 
+  // Global rate limit: 100 requests per 15 minutes per IP
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: "Too many requests — please try again later", code: "RATE_LIMITED", statusCode: 429 },
+    }),
+  );
+
   // Parse URL-encoded bodies BEFORE json — PayFast webhook sends form data
-  app.use(express.urlencoded({ extended: true }));
-  app.use(express.json());
+  app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+  app.use(express.json({ limit: "10kb" }));
   app.use(cookieParser());
 
   // ─── Request logger ──────────────────────────────────────────────────────────
@@ -42,7 +61,15 @@ export function createApp() {
 
   // ─── Routes ──────────────────────────────────────────────────────────────────
 
-  app.use("/api/auth", authRoutes);
+  // Stricter rate limit on auth routes: 20 requests per 15 minutes per IP
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many auth requests — please try again later", code: "RATE_LIMITED", statusCode: 429 },
+  });
+  app.use("/api/auth", authLimiter, authRoutes);
   app.use("/api/orders", orderRoutes);
   app.use("/api/payments", paymentRoutes);
   app.use("/api/admin", adminRoutes);
