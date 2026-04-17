@@ -6,7 +6,7 @@ import logoImage from '@/assets/brand/logo.png'
 
 function Navbar() {
   const navigate = useNavigate()
-  const { isAuthenticated, logoutUser } = useAuth()
+  const { isAuthenticated, user, logoutUser } = useAuth()
 
   const handleLogout = async () => {
     await logoutUser()
@@ -60,9 +60,14 @@ function Navbar() {
         </nav>
 
         {isAuthenticated ? (
-          <Button size="sm" variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-muted-foreground sm:inline">
+              {user?.name} {user?.surname}
+            </span>
+            <Button size="sm" variant="outline" onClick={handleLogout}>
+              Logout
+            </Button>
+          </div>
         ) : (
           <Button size="sm" onClick={() => navigate('/login')}>
             Login
