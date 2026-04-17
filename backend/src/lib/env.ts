@@ -18,10 +18,10 @@ export const env = {
   DATABASE_URL: required("DATABASE_URL"),
   JWT_SECRET: required("JWT_SECRET"),
   QUOTE_SECRET: process.env.QUOTE_SECRET || required("JWT_SECRET"),
-  PAYFAST_MERCHANT_ID: process.env.PAYFAST_MERCHANT_ID || "10000100",
-  PAYFAST_MERCHANT_KEY: process.env.PAYFAST_MERCHANT_KEY || "46f0cd694581a",
+  PAYFAST_MERCHANT_ID: process.env.PAYFAST_MERCHANT_ID || "34604435",
+  PAYFAST_MERCHANT_KEY: process.env.PAYFAST_MERCHANT_KEY || "g9cot8bjo0g5q",
   PAYFAST_PASSPHRASE: process.env.PAYFAST_PASSPHRASE || "",
-  PAYFAST_SANDBOX: process.env.PAYFAST_SANDBOX !== "false",
+  PAYFAST_SANDBOX: process.env.PAYFAST_SANDBOX === "true",
   FRONTEND_URL: process.env.FRONTEND_URL || "https://awdelivery.co.za:5173",
   BACKEND_URL: process.env.BACKEND_URL || "https://api.awdelivery.co.za:3000",
 
