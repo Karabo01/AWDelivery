@@ -25,11 +25,8 @@ export const env = {
   FRONTEND_URL: process.env.FRONTEND_URL || "https://awdelivery.co.za:5173",
   BACKEND_URL: process.env.BACKEND_URL || "https://api.awdelivery.co.za:3000",
 
-  // Email (SMTP)
-  SMTP_HOST: process.env.SMTP_HOST || "localhost",
-  SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
-  SMTP_USER: process.env.SMTP_USER || "",
-  SMTP_PASS: process.env.SMTP_PASS || "",
+  // Email (SendGrid)
+  SENDGRID_API_KEY: required("SENDGRID_API_KEY"),
   EMAIL_FROM: process.env.EMAIL_FROM || "notifications@awdelivery.co.za",
 
   get isProduction() {

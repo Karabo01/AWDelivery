@@ -1,26 +1,10 @@
-import nodemailer from "nodemailer";
-import type { Transporter } from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import prisma from "../lib/prisma.js";
 import { env } from "../lib/env.js";
 import { getEmailTemplate } from "../config/email.config.js";
 import type { NotificationTemplateType } from "@prisma/client";
 
-let transporter: Transporter;
-
-function getTransporter(): Transporter {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS,
-      },
-    });
-  }
-  return transporter;
-}
+sgMail.setApiKey(env.SENDGRID_API_KEY);
 
 export async function sendNotificationEmail(
   recipientEmail: string,
@@ -35,8 +19,8 @@ export async function sendNotificationEmail(
       `[Email] Sending ${templateType} to ${recipientEmail}${orderId ? ` for order ${orderId}` : ""}`,
     );
 
-    await getTransporter().sendMail({
-      from: `"AWDelivery" <${env.EMAIL_FROM}>`,
+    await sgMail.send({
+      from: { email: env.EMAIL_FROM, name: "AWDelivery" },
       to: recipientEmail,
       subject: template.subject,
       html: template.html,
@@ -83,8 +67,8 @@ export async function sendOtpEmail(email: string, code: string) {
   try {
     console.log(`[Email] Sending OTP to ${email}`);
 
-    await getTransporter().sendMail({
-      from: `"AWDelivery" <${env.EMAIL_FROM}>`,
+    await sgMail.send({
+      from: { email: env.EMAIL_FROM, name: "AWDelivery" },
       to: email,
       subject: template.subject,
       html: template.html,

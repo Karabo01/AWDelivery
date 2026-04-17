@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
+    "@sendgrid/mail": "^8.1.6",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -22,7 +23,6 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "md5": "^2.3.0",
-    "nodemailer": "^8.0.5",
     "uuid": "^11.1.0",
     "zod": "^3.24.0"
   },
@@ -34,7 +34,6 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/md5": "^2.3.5",
     "@types/node": "^22.14.0",
-    "@types/nodemailer": "^6.4.0",
     "@types/uuid": "^10.0.0",
     "dotenv": "^16.5.0",
     "prisma": "^6.5.0",
