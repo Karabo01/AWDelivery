@@ -199,7 +199,7 @@ function deliveredTemplate(data: Record<string, string>): string {
       \ud83d\udcde <a href="tel:+27823855533" style="color:#18181b;text-decoration:none;font-weight:600;">082 385 5533</a>
     </p>
     <p style="margin:0;font-size:14px;color:#52525b;">
-      \u2709\ufe0f <a href="mailto:orders@awdelivery.co.za" style="color:#18181b;text-decoration:none;font-weight:600;">orders@awdelivery.co.za</a>
+      \u2709\ufe0f <a href="mailto:support@awdtech.co.za" style="color:#18181b;text-decoration:none;font-weight:600;">orders@awdelivery.co.za</a>
     </p>
   `);
 }
@@ -226,10 +226,10 @@ function inTransitTemplate(data: Record<string, string>): string {
       If you need any assistance, please don\u2019t hesitate to contact us:
     </p>
     <p style="margin:0 0 4px;font-size:14px;color:#52525b;">
-      \ud83d\udcde <a href="tel:+27823855533" style="color:#18181b;text-decoration:none;font-weight:600;">082 385 5533</a>
+      \ud83d\udcde <a href="tel:+27828355397" style="color:#18181b;text-decoration:none;font-weight:600;">082 835 5397</a>
     </p>
     <p style="margin:0;font-size:14px;color:#52525b;">
-      \u2709\ufe0f <a href="mailto:orders@awdelivery.co.za" style="color:#18181b;text-decoration:none;font-weight:600;">orders@awdelivery.co.za</a>
+      \u2709\ufe0f <a href="mailto:support@awdtech.co.za" style="color:#18181b;text-decoration:none;font-weight:600;">support@awdtech.co.za</a>
     </p>
   `);
 }
