@@ -204,7 +204,10 @@ function OrdersPage() {
               className={`cursor-pointer hover:border-primary/50 transition-colors ${
                 selectedOrder?.id === order.id ? 'border-primary' : ''
               }`}
-              onClick={() => setSelectedOrder(order)}
+              onClick={() => {
+                setSelectedOrder(order)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
             >
               <CardContent className="py-3">
                 <div className="flex items-center justify-between">
