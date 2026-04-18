@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,6 +33,16 @@ function OrdersPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null)
+
+  // Ref for the order detail card
+  const orderDetailRef = useRef<HTMLDivElement | null>(null)
+
+  // Scroll to the order detail card when selectedOrder changes
+  useEffect(() => {
+    if (selectedOrder && orderDetailRef.current) {
+      orderDetailRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [selectedOrder])
 
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ['admin-orders', search, statusFilter],
@@ -110,7 +120,7 @@ function OrdersPage() {
       </div>
 
       {selectedOrder && (
-        <Card className="border-primary/50">
+        <Card className="border-primary/50" ref={orderDetailRef}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">
               Order #{selectedOrder.trackingNumber}
@@ -206,7 +216,6 @@ function OrdersPage() {
               }`}
               onClick={() => {
                 setSelectedOrder(order)
-                window.scrollTo({ top: 0, behavior: 'smooth' })
               }}
             >
               <CardContent className="py-3">
