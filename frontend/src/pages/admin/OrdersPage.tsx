@@ -120,7 +120,8 @@ function OrdersPage() {
       </div>
 
       {selectedOrder && (
-        <Card className="border-primary/50" ref={orderDetailRef}>
+        <Card className="border-primary/50">
+          <div ref={orderDetailRef}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">
               Order #{selectedOrder.trackingNumber}
@@ -201,6 +202,7 @@ function OrdersPage() {
               </div>
             </div>
           </CardContent>
+          </div>
         </Card>
       )}
 
