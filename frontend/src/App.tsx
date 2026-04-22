@@ -1,5 +1,4 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { Truck } from 'lucide-react'
 
 import Navbar from '@/components/shared/Navbar'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
