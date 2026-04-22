@@ -59,66 +59,26 @@ function App() {
         </main>
 
         <footer className="bg-[#171513] px-6 py-14 text-[#c8c3bf] sm:px-10 lg:px-14">
-          <div className="mx-auto w-full max-w-6xl">
-            <div className="grid gap-8 lg:grid-cols-[1.45fr_1fr_1fr_1fr]">
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <Truck className="h-6 w-6" />
-                  </div>
-                  <p className="font-display text-xl font-normal leading-none text-[#f1efec] sm:text-2xl">AWDelivery</p>
+          <div className="mx-auto w-full max-w-3xl flex flex-col items-center gap-6">
+            <div className="flex flex-col items-center gap-3 w-full">
+              <div className="rounded-2xl bg-white/90 p-5 shadow-lg flex flex-col sm:flex-row items-center gap-4 border border-primary/30 w-full justify-center">
+                <div className="flex-1 text-center sm:text-left">
+                  <p className="text-base font-semibold text-primary mb-1">Proudly partnered with <span className="text-black">Legodimo Logistics</span></p>
+                  <a
+                    href="https://www.tiktok.com/@legodimo.logistic?_r=1&_t=ZS-94FUmNH3yXC"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#010101] px-4 py-2 text-white font-semibold hover:bg-[#111] transition mt-2"
+                    aria-label="Legodimo Logistics TikTok"
+                  >
+                    <svg width="22" height="22" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="256" height="256" rx="60" fill="#000"/><path d="M164.5 48c0 7.7 2.7 14.7 8.1 20.9 5.4 6.2 12.1 9.7 20.1 10.5v24.2c-8.7.1-17-1.6-24.9-5.1v54.7c0 17.7-5.1 31.2-15.2 40.5-10.1 9.3-22.2 14-36.3 14-13.7 0-25.2-4.7-34.5-14.1-9.3-9.4-14-20.7-14-33.9 0-13.2 4.7-24.5 14-33.9 9.3-9.4 20.8-14.1 34.5-14.1 2.2 0 4.3.1 6.3.3v25.2c-2-.3-4.1-.5-6.3-.5-7.2 0-13.2 2.4-18.1 7.1-4.9 4.7-7.3 10.5-7.3 17.3 0 6.8 2.4 12.6 7.3 17.3 4.9 4.7 10.9 7.1 18.1 7.1 7.2 0 13.2-2.4 18.1-7.1 4.9-4.7 7.3-10.5 7.3-17.3V48h24.9z" fill="#fff"/></svg>
+                    TikTok
+                  </a>
                 </div>
-                <p className="max-w-md text-sm leading-relaxed text-[#857f7b] sm:text-base">
-                  Fast, reliable deliveries for every person and every business across South Africa.
-                </p>
               </div>
-
-              <div className="space-y-7">
-                <p className="text-sm font-normal uppercase tracking-[0.08em] text-[#d4d0cc]">Services</p>
-                <ul className="space-y-4 text-xs text-[#857f7b] sm:text-sm">
-                  <li>Same-Day Express</li>
-                  <li>Scheduled Delivery</li>
-                  <li>Business Bulk</li>
-                  <li>Secure Documents</li>
-                </ul>
-              </div>
-
-              <div className="space-y-7">
-                <p className="text-sm font-normal uppercase tracking-[0.08em] text-[#d4d0cc]">Company</p>
-                <ul className="space-y-4 text-xs text-[#857f7b] sm:text-sm">
-                  <li>About us</li>
-                  <li>Careers</li>
-                  <li>Press</li>
-                  <li>Partners</li>
-                </ul>
-              </div>
-
-              <div className="space-y-7">
-                <p className="text-sm font-normal uppercase tracking-[0.08em] text-[#d4d0cc]">Support</p>
-                <ul className="space-y-4 text-xs text-[#857f7b] sm:text-sm">
-                  <li>Help centre</li>
-                  <li>Track a package</li>
-                  <li>Contact us</li>
-                  <li>Driver app</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-16 border-t border-[#332f2d] pt-8">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <p className="text-xs font-normal text-[#79736f] sm:text-sm">© 2026 AWDelivery (Pty) Ltd. All rights reserved.</p>
-                <div className="flex items-center gap-4">
-                  {['f', 'in', 'tw', 'ig'].map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className="flex h-12 w-12 items-center justify-center rounded-full border border-[#403b38] text-lg font-normal text-[#8b8580] transition hover:text-[#d4d0cc]"
-                      aria-label={`AWDelivery ${item} social link`}
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
+              <div className="mt-4 text-center w-full space-y-1">
+                <p className="text-sm text-[#857f7b]">Support: <a href="mailto:support@awdtech.co.za" className="underline hover:text-primary">support@awdtech.co.za</a></p>
+                <p className="text-sm text-[#857f7b]">Online stores: Contact us for API integrations at <a href="mailto:info@awdtech.co.za" className="underline hover:text-primary">info@awdtech.co.za</a></p>
               </div>
             </div>
           </div>

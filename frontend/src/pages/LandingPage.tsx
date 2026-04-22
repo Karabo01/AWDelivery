@@ -14,6 +14,9 @@ import storyParcelHandoff from '@/assets/landing/delivery.jpg'
 import storyPaymentSecure from '@/assets/landing/payment.jpg'
 import storyGiftMoment from '@/assets/landing/gift.jpg'
 
+// Legodimo Logistics TikTok
+const LEGODIMO_TIKTOK_URL = "https://www.tiktok.com/@legodimo.logistic?_r=1&_t=ZS-94FUmNH3yXC"
+
 const storyPlaceholders = [
   {
     title: 'Parcel handoff',
