@@ -2,7 +2,9 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 import Navbar from '@/components/shared/Navbar'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
+import SuperAdminRoute from '@/components/shared/SuperAdminRoute'
 import AdminPage from '@/pages/admin/AdminPage'
+import ManagementPage from '@/pages/ManagementPage'
 import DashboardPage from '@/pages/DashboardPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import LandingPage from '@/pages/LandingPage'
@@ -52,6 +54,14 @@ function App() {
                 <ProtectedRoute>
                   <AdminPage />
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/management"
+              element={
+                <SuperAdminRoute>
+                  <ManagementPage />
+                </SuperAdminRoute>
               }
             />
           </Routes>

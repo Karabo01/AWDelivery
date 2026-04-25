@@ -3,11 +3,13 @@ import jwt from "jsonwebtoken";
 import { env } from "../lib/env.js";
 import prisma from "../lib/prisma.js";
 import { AppError } from "../utils/errors.js";
+import { isSuperAdminEmail } from "../lib/superAdmin.js";
 
 export interface AuthPayload {
   userId: string;
   phone: string;
   isAdmin: boolean;
+  email?: string;
 }
 
 declare global {
@@ -65,6 +67,21 @@ export function requireAdmin(
   if (!req.user?.isAdmin) {
     throw new AppError(
       "User does not have admin privileges",
+      "FORBIDDEN",
+      403,
+    );
+  }
+  next();
+}
+
+export function requireSuperAdmin(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
+  if (!isSuperAdminEmail(req.user?.email)) {
+    throw new AppError(
+      "User does not have super admin privileges",
       "FORBIDDEN",
       403,
     );

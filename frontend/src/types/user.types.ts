@@ -9,6 +9,7 @@ export interface User {
   readonly isVerified: boolean
   readonly defaultAddress?: Address
   readonly isAdmin: boolean
+  readonly isSuperAdmin?: boolean
   readonly createdAt: string
 }
 

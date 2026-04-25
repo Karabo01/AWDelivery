@@ -29,6 +29,19 @@ export async function getUsers(params?: {
   return response.data
 }
 
+export async function setUserAdmin(
+  userId: string,
+  isAdmin: boolean,
+): Promise<{ user: User & { isSuperAdmin: boolean } }> {
+  const response = await api.patch(`/admin/users/${userId}/admin`, { isAdmin })
+  return response.data
+}
+
+export async function deleteUser(userId: string): Promise<{ message: string }> {
+  const response = await api.delete(`/admin/users/${userId}`)
+  return response.data
+}
+
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 export async function getOrders(params?: {

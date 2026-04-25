@@ -10,6 +10,7 @@ type AuthContextState = {
   user: User | null
   isAuthenticated: boolean
   isAdmin: boolean
+  isSuperAdmin: boolean
   isLoading: boolean
   registerUser: (payload: RegisterRequest) => Promise<void>
   loginUser: (payload: LoginRequest) => Promise<void>
@@ -71,6 +72,7 @@ function AuthProvider({ children }: AuthProviderProps) {
       user: meQuery.data?.user ?? null,
       isAuthenticated: Boolean(meQuery.data?.user),
       isAdmin: Boolean(meQuery.data?.user?.isAdmin),
+      isSuperAdmin: Boolean(meQuery.data?.user?.isSuperAdmin),
       isLoading:
         meQuery.isLoading ||
         registerMutation.isPending ||

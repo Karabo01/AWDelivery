@@ -6,7 +6,7 @@ import logoImage from '@/assets/brand/logo.png'
 
 function Navbar() {
   const navigate = useNavigate()
-  const { isAuthenticated, user, logoutUser } = useAuth()
+  const { isAuthenticated, isSuperAdmin, user, logoutUser } = useAuth()
 
   const handleLogout = async () => {
     await logoutUser()
@@ -57,6 +57,20 @@ function Navbar() {
           >
             Dashboard
           </NavLink>
+          {isSuperAdmin ? (
+            <NavLink
+              to="/management"
+              className={({ isActive }) =>
+                `rounded-full px-3 py-1.5 transition ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
+                }`
+              }
+            >
+              Management
+            </NavLink>
+          ) : null}
         </nav>
 
         {isAuthenticated ? (

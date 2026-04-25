@@ -1,6 +1,7 @@
 import { Router } from "express";
 import prisma from "../lib/prisma.js";
-import { authenticate, requireAdmin } from "../middleware/auth.js";
+import { authenticate, requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
+import { isSuperAdminEmail } from "../lib/superAdmin.js";
 import { validate, validateQuery } from "../middleware/validate.js";
 import {
   updateOrderStatusSchema,
@@ -58,7 +59,8 @@ router.get("/users", validateQuery(adminUsersQuerySchema), async (req, res) => {
       email: u.email,
       isVerified: u.isVerified,
       defaultAddress: u.defaultAddress,
-      isAdmin: u.isAdmin,
+      isAdmin: u.isAdmin || isSuperAdminEmail(u.email),
+      isSuperAdmin: isSuperAdminEmail(u.email),
       orderCount: u._count.orders,
       createdAt: u.createdAt.toISOString(),
     })),
@@ -475,6 +477,80 @@ router.get("/stats", async (_req, res) => {
       count: s._count.status,
     })),
   });
+});
+
+// ─── PATCH /admin/users/:id/admin (super admin only) ────────────────────────
+
+router.patch("/users/:id/admin", requireSuperAdmin, async (req, res) => {
+  const id = req.params.id as string;
+  const { isAdmin } = req.body as { isAdmin?: boolean };
+
+  if (typeof isAdmin !== "boolean") {
+    throw new AppError("isAdmin must be a boolean", "VALIDATION_ERROR", 400);
+  }
+
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) {
+    throw new AppError("User not found", "USER_NOT_FOUND", 404);
+  }
+
+  if (isSuperAdminEmail(target.email) && !isAdmin) {
+    throw new AppError(
+      "Cannot revoke admin privileges from the super admin",
+      "FORBIDDEN",
+      403,
+    );
+  }
+
+  const updated = await prisma.user.update({
+    where: { id },
+    data: { isAdmin },
+  });
+
+  res.json({
+    user: {
+      id: updated.id,
+      phone: updated.phone,
+      name: updated.name,
+      surname: updated.surname,
+      email: updated.email,
+      isVerified: updated.isVerified,
+      defaultAddress: updated.defaultAddress,
+      isAdmin: updated.isAdmin || isSuperAdminEmail(updated.email),
+      isSuperAdmin: isSuperAdminEmail(updated.email),
+      createdAt: updated.createdAt.toISOString(),
+    },
+  });
+});
+
+// ─── DELETE /admin/users/:id (super admin only) ─────────────────────────────
+
+router.delete("/users/:id", requireSuperAdmin, async (req, res) => {
+  const id = req.params.id as string;
+
+  const target = await prisma.user.findUnique({
+    where: { id },
+    include: { _count: { select: { orders: true } } },
+  });
+
+  if (!target) {
+    throw new AppError("User not found", "USER_NOT_FOUND", 404);
+  }
+
+  if (isSuperAdminEmail(target.email)) {
+    throw new AppError("Cannot delete the super admin account", "FORBIDDEN", 403);
+  }
+
+  if (target._count.orders > 0) {
+    throw new AppError(
+      "Cannot delete a user with existing orders",
+      "USER_HAS_ORDERS",
+      409,
+    );
+  }
+
+  await prisma.user.delete({ where: { id } });
+  res.json({ message: "User deleted" });
 });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

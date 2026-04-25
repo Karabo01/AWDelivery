@@ -16,6 +16,7 @@ import {
 } from "../validation/schemas.js";
 import { AppError } from "../utils/errors.js";
 import { sendOtpEmail } from "../services/email.service.js";
+import { isSuperAdminEmail } from "../lib/superAdmin.js";
 
 const SALT_ROUNDS = 12;
 const router = Router();
@@ -67,7 +68,8 @@ function formatUser(user: any) {
     email: user.email,
     isVerified: user.isVerified,
     defaultAddress: user.defaultAddress,
-    isAdmin: user.isAdmin,
+    isAdmin: user.isAdmin || isSuperAdminEmail(user.email),
+    isSuperAdmin: isSuperAdminEmail(user.email),
     createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
   };
 }
@@ -162,7 +164,12 @@ router.post("/login", validate(loginSchema), async (req, res) => {
 
   // Password correct + account verified → issue JWT directly
   const token = jwt.sign(
-    { userId: user.id, phone: user.phone, isAdmin: user.isAdmin },
+    {
+      userId: user.id,
+      phone: user.phone,
+      email: user.email,
+      isAdmin: user.isAdmin || isSuperAdminEmail(user.email),
+    },
     env.JWT_SECRET,
     { expiresIn: "7d" },
   );
@@ -210,7 +217,12 @@ router.post("/verify-otp", validate(verifyOtpSchema), async (req, res) => {
 
   // Sign JWT
   const token = jwt.sign(
-    { userId: user.id, phone: user.phone, isAdmin: user.isAdmin },
+    {
+      userId: user.id,
+      phone: user.phone,
+      email: user.email,
+      isAdmin: user.isAdmin || isSuperAdminEmail(user.email),
+    },
     env.JWT_SECRET,
     { expiresIn: "7d" },
   );
