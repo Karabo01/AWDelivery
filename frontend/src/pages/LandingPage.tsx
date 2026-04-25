@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card'
 import heroCourierMoment from '@/assets/landing/packing.jpg'
 import storyParcelHandoff from '@/assets/landing/delivery.jpg'
-import storyPaymentSecure from '@/assets/landing/payment.jpg'
+import storyPaymentSecure from '@/assets/landing/online-payment.jpg'
 import storyGiftMoment from '@/assets/landing/gift.jpg'
 
 
@@ -25,12 +25,12 @@ const storyPlaceholders = [
     imageAlt: 'Placeholder artwork for parcel handoff photography',
   },
   {
-    title: 'Speed point payment',
-    caption: 'Placeholder for a photo of someone paying on a card machine.',
-    accent: 'Fast checkout that feels familiar and trustworthy.',
+    title: 'Secure online payment',
+    caption: 'Placeholder for a photo of someone paying online from their phone or laptop.',
+    accent: 'Pay on the website in seconds — safe, simple, and trusted.',
     icon: CreditCard,
     imageSrc: storyPaymentSecure,
-    imageAlt: 'Placeholder artwork for speed point payment photography',
+    imageAlt: 'Placeholder artwork for secure online payment photography',
   },
   {
     title: 'Gift delivery moment',
