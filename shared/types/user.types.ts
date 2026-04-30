@@ -1,5 +1,7 @@
 import type { Address } from "./order.types.js";
 
+export type AccountType = "INDIVIDUAL" | "BUSINESS";
+
 export interface User {
   readonly id: string;
   /** E.164 format phone number, e.g. +27812345678 */
@@ -10,6 +12,9 @@ export interface User {
   readonly isVerified: boolean;
   readonly defaultAddress?: Address;
   readonly isAdmin: boolean;
+  readonly isSuperAdmin?: boolean;
+  readonly isBusiness: boolean;
+  readonly companyName?: string | null;
   readonly createdAt: string;
 }
 
@@ -18,4 +23,5 @@ export interface AuthPayload {
   readonly userId: string;
   readonly phone: string;
   readonly isAdmin: boolean;
+  readonly isBusiness?: boolean;
 }

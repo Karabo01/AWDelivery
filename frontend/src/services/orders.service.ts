@@ -1,5 +1,9 @@
 import api from '@/services/api'
 import type {
+	BulkQuoteRequest,
+	BulkQuoteResponse,
+	CreateBulkOrderRequest,
+	CreateBulkOrderResponse,
 	CreateOrderRequest,
 	CreateOrderResponse,
 	PaginatedResponse,
@@ -7,7 +11,7 @@ import type {
 	QuoteResponse,
 	TrackOrderResponse,
 } from '@/types'
-import type { Order } from '@/types/order.types'
+import type { Invoice, Order } from '@/types/order.types'
 
 type OrdersQuery = {
 	page?: number
@@ -36,4 +40,29 @@ async function trackOrder(trackingNumber: string) {
 	return data
 }
 
-export { createOrder, getMyOrders, getQuote, trackOrder }
+async function getBulkQuote(payload: BulkQuoteRequest) {
+	const { data } = await api.post<BulkQuoteResponse>('/orders/bulk/quote', payload)
+	return data
+}
+
+async function createBulkOrder(payload: CreateBulkOrderRequest) {
+	const { data } = await api.post<CreateBulkOrderResponse>('/orders/bulk', payload)
+	return data
+}
+
+async function getMyInvoices(query?: OrdersQuery) {
+	const { data } = await api.get<PaginatedResponse<Invoice>>('/orders/invoices/mine', {
+		params: query,
+	})
+	return data
+}
+
+export {
+	createBulkOrder,
+	createOrder,
+	getBulkQuote,
+	getMyInvoices,
+	getMyOrders,
+	getQuote,
+	trackOrder,
+}

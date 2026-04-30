@@ -1,5 +1,5 @@
 import api from '@/services/api'
-import type { Order, OrderStatus } from '@/types/order.types'
+import type { Invoice, InvoiceStatus, Order, OrderStatus, PaymentStatus } from '@/types/order.types'
 import type { User } from '@/types/user.types'
 import type { Driver, CreateDriverPayload, UpdateDriverPayload, AdminStats } from '@/types/driver.types'
 
@@ -16,6 +16,10 @@ interface PaginatedResponse<T> {
 
 interface AdminOrder extends Order {
   driver: Driver | null
+  bulkOrderId?: string | null
+  bulkOrder?: { id: string; referenceNumber: string } | null
+  invoiceId?: string | null
+  invoice?: { id: string; invoiceNumber: string; status: string } | null
 }
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -48,6 +52,8 @@ export async function getOrders(params?: {
   page?: number
   pageSize?: number
   status?: OrderStatus
+  paymentStatus?: PaymentStatus
+  type?: 'SINGLE' | 'BULK'
   search?: string
 }): Promise<PaginatedResponse<AdminOrder>> {
   const response = await api.get('/admin/orders', { params })
@@ -107,6 +113,42 @@ export async function updateDriver(
 
 export async function deleteDriver(driverId: string): Promise<{ message: string; driver?: Driver }> {
   const response = await api.delete(`/admin/drivers/${driverId}`)
+  return response.data
+}
+
+// ─── Invoices ────────────────────────────────────────────────────────────────
+
+export async function getInvoices(params?: {
+  page?: number
+  pageSize?: number
+  status?: InvoiceStatus
+  businessId?: string
+}): Promise<PaginatedResponse<Invoice & { business: { id: string; name: string; surname: string; email: string; companyName: string | null } }>> {
+  const response = await api.get('/admin/invoices', { params })
+  return response.data
+}
+
+export async function getInvoice(invoiceId: string): Promise<{
+  invoice: Invoice & {
+    business: { id: string; name: string; surname: string; email: string; phone: string; companyName: string | null }
+    orders: Order[]
+  }
+}> {
+  const response = await api.get(`/admin/invoices/${invoiceId}`)
+  return response.data
+}
+
+export async function markInvoicePaid(invoiceId: string): Promise<{ invoice: Invoice }> {
+  const response = await api.post(`/admin/invoices/${invoiceId}/mark-paid`)
+  return response.data
+}
+
+export async function setUserBusiness(
+  userId: string,
+  isBusiness: boolean,
+  companyName?: string,
+): Promise<{ user: { id: string; email: string; isBusiness: boolean; companyName: string | null } }> {
+  const response = await api.patch(`/admin/users/${userId}/business`, { isBusiness, companyName })
   return response.data
 }
 

@@ -39,6 +39,23 @@ const SIZE_SURCHARGES: Record<string, number> = {
   LARGE: 2500,
 };
 
+const JHB_BOUNDS = {
+  minLat: -26.5,
+  maxLat: -25.95,
+  minLng: 27.85,
+  maxLng: 28.25,
+};
+const JHB_FLAT_RATE_CENTS = 7000;
+
+export function isInJohannesburg(lat: number, lng: number): boolean {
+  return (
+    lat >= JHB_BOUNDS.minLat &&
+    lat <= JHB_BOUNDS.maxLat &&
+    lng >= JHB_BOUNDS.minLng &&
+    lng <= JHB_BOUNDS.maxLng
+  );
+}
+
 export function calculateQuote(
   pickupLat: number,
   pickupLng: number,
@@ -47,6 +64,19 @@ export function calculateQuote(
   parcelSize: string,
 ) {
   const distanceKm = haversineKm(pickupLat, pickupLng, deliveryLat, deliveryLng);
+
+  if (
+    parcelSize === "SMALL" &&
+    isInJohannesburg(pickupLat, pickupLng) &&
+    isInJohannesburg(deliveryLat, deliveryLng)
+  ) {
+    return {
+      amount: JHB_FLAT_RATE_CENTS,
+      distanceKm,
+      breakdown: { flatRate: JHB_FLAT_RATE_CENTS },
+    };
+  }
+
   const baseFare = BASE_FARE;
   const distanceFare = Math.round(distanceKm * PER_KM_RATE);
   const sizeSurcharge = SIZE_SURCHARGES[parcelSize] ?? 0;
@@ -71,4 +101,26 @@ export function signQuoteToken(data: QuoteTokenPayload): string {
 
 export function verifyQuoteToken(token: string): QuoteTokenPayload {
   return jwt.verify(token, env.QUOTE_SECRET) as QuoteTokenPayload;
+}
+
+// ─── Bulk quote token ───────────────────────────────────────────────────────
+
+export interface BulkQuoteTokenPackage {
+  amount: number;
+  distanceKm: number;
+}
+
+export interface BulkQuoteTokenPayload {
+  pickupAddress: unknown;
+  packages: BulkQuoteTokenPackage[];
+  total: number;
+  count: number;
+}
+
+export function signBulkQuoteToken(data: BulkQuoteTokenPayload): string {
+  return jwt.sign(data, env.QUOTE_SECRET, { expiresIn: "10m" });
+}
+
+export function verifyBulkQuoteToken(token: string): BulkQuoteTokenPayload {
+  return jwt.verify(token, env.QUOTE_SECRET) as BulkQuoteTokenPayload;
 }

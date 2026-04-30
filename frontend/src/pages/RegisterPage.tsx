@@ -11,19 +11,27 @@ import { Label } from '@/components/ui/label'
 import { formatToSaE164, isValidSaE164 } from '@/lib/format'
 import useAuth from '@/hooks/useAuth'
 
-const registerSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  surname: z.string().min(1, 'Surname is required').max(100),
-  phone: z.string().refine(isValidSaE164, 'Use a valid South African number (+27XXXXXXXXX).'),
-  email: z.string().email('Enter a valid email address').max(255),
-  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
-})
+const registerSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required').max(100),
+    surname: z.string().min(1, 'Surname is required').max(100),
+    phone: z.string().refine(isValidSaE164, 'Use a valid South African number (+27XXXXXXXXX).'),
+    email: z.string().email('Enter a valid email address').max(255),
+    password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+    accountType: z.enum(['INDIVIDUAL', 'BUSINESS']).default('INDIVIDUAL'),
+    companyName: z.string().max(200).optional(),
+  })
+  .refine((d) => d.accountType !== 'BUSINESS' || !!d.companyName?.trim(), {
+    message: 'Company name is required for business accounts',
+    path: ['companyName'],
+  })
 
 const otpSchema = z.object({
   code: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits.'),
 })
 
-type RegisterFormValues = z.infer<typeof registerSchema>
+type RegisterFormInput = z.input<typeof registerSchema>
+type RegisterFormOutput = z.output<typeof registerSchema>
 type OtpFormValues = z.infer<typeof otpSchema>
 
 function RegisterPage() {
@@ -33,10 +41,20 @@ function RegisterPage() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [email, setEmail] = useState('')
 
-  const registerForm = useForm<RegisterFormValues>({
+  const registerForm = useForm<RegisterFormInput, unknown, RegisterFormOutput>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: '', surname: '', phone: '+27', email: '', password: '' },
+    defaultValues: {
+      name: '',
+      surname: '',
+      phone: '+27',
+      email: '',
+      password: '',
+      accountType: 'INDIVIDUAL',
+      companyName: '',
+    },
   })
+
+  const accountType = registerForm.watch('accountType')
 
   const otpForm = useForm<OtpFormValues>({
     resolver: zodResolver(otpSchema),
@@ -92,6 +110,49 @@ function RegisterPage() {
         <CardContent className="space-y-6">
           {activeStep === 'register' ? (
             <form className="space-y-4" onSubmit={onSubmitRegister}>
+              <div className="space-y-2">
+                <Label>Account type</Label>
+                <div className="grid grid-cols-2 gap-2 rounded-lg border border-border/80 p-1">
+                  {(['INDIVIDUAL', 'BUSINESS'] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() =>
+                        registerForm.setValue('accountType', type, { shouldValidate: true })
+                      }
+                      className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        accountType === type
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted/40'
+                      }`}
+                    >
+                      {type === 'INDIVIDUAL' ? 'Individual' : 'Business'}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {accountType === 'BUSINESS'
+                    ? 'Business accounts can place bulk orders and are billed weekly via EFT.'
+                    : 'Individual accounts pay per order via the secure online checkout.'}
+                </p>
+              </div>
+
+              {accountType === 'BUSINESS' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Company name</Label>
+                  <Input
+                    id="companyName"
+                    placeholder="Acme (Pty) Ltd"
+                    {...registerForm.register('companyName')}
+                  />
+                  {registerForm.formState.errors.companyName ? (
+                    <p className="text-sm text-destructive">
+                      {registerForm.formState.errors.companyName.message}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>

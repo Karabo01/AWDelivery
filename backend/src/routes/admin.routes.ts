@@ -12,6 +12,7 @@ import {
   updateDriverSchema,
   assignDriverSchema,
   adminDriversQuerySchema,
+  adminInvoicesQuerySchema,
 } from "../validation/schemas.js";
 import { AppError } from "../utils/errors.js";
 import { isValidTransition } from "../utils/statusTransitions.js";
@@ -61,6 +62,8 @@ router.get("/users", validateQuery(adminUsersQuerySchema), async (req, res) => {
       defaultAddress: u.defaultAddress,
       isAdmin: u.isAdmin || isSuperAdminEmail(u.email),
       isSuperAdmin: isSuperAdminEmail(u.email),
+      isBusiness: !!u.isBusiness,
+      companyName: u.companyName ?? null,
       orderCount: u._count.orders,
       createdAt: u.createdAt.toISOString(),
     })),
@@ -73,18 +76,20 @@ router.get("/users", validateQuery(adminUsersQuerySchema), async (req, res) => {
 // ─── GET /admin/orders ───────────────────────────────────────────────────────
 
 router.get("/orders", validateQuery(adminOrdersQuerySchema), async (req, res) => {
-  const { page, pageSize, status, search } = (req as any).validatedQuery;
+  const { page, pageSize, status, paymentStatus, type, search } = (req as any).validatedQuery;
 
   const where: Prisma.OrderWhereInput = {};
 
-  if (status) {
-    where.status = status;
-  }
+  if (status) where.status = status;
+  if (paymentStatus) where.paymentStatus = paymentStatus;
+  if (type === "BULK") where.bulkOrderId = { not: null };
+  if (type === "SINGLE") where.bulkOrderId = null;
 
   if (search) {
     where.OR = [
       { trackingNumber: { contains: search, mode: "insensitive" } },
       { receiverPhone: { contains: search } },
+      { bulkOrder: { is: { referenceNumber: { contains: search, mode: "insensitive" } } } },
     ];
   }
 
@@ -94,7 +99,11 @@ router.get("/orders", validateQuery(adminOrdersQuerySchema), async (req, res) =>
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { driver: true },
+      include: {
+        driver: true,
+        bulkOrder: { select: { id: true, referenceNumber: true } },
+        invoice: { select: { id: true, invoiceNumber: true, status: true } },
+      },
     }),
     prisma.order.count({ where }),
   ]);
@@ -553,6 +562,165 @@ router.delete("/users/:id", requireSuperAdmin, async (req, res) => {
   res.json({ message: "User deleted" });
 });
 
+// ─── GET /admin/invoices ─────────────────────────────────────────────────────
+
+router.get("/invoices", validateQuery(adminInvoicesQuerySchema), async (req, res) => {
+  const { page, pageSize, status, businessId } = (req as any).validatedQuery;
+
+  const where: Prisma.InvoiceWhereInput = {};
+  if (status) where.status = status;
+  if (businessId) where.businessId = businessId;
+
+  const [invoices, total] = await Promise.all([
+    prisma.invoice.findMany({
+      where,
+      orderBy: [{ status: "asc" }, { weekStart: "desc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        business: { select: { id: true, name: true, surname: true, email: true, companyName: true } },
+        _count: { select: { orders: true } },
+      },
+    }),
+    prisma.invoice.count({ where }),
+  ]);
+
+  res.json({
+    data: invoices.map((inv) => ({
+      id: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      business: inv.business,
+      weekStart: inv.weekStart.toISOString(),
+      weekEnd: inv.weekEnd.toISOString(),
+      totalAmount: inv.totalAmount,
+      status: inv.status,
+      paidAt: inv.paidAt?.toISOString() ?? null,
+      paidBy: inv.paidBy,
+      orderCount: inv._count.orders,
+    })),
+    total,
+    page,
+    pageSize,
+  });
+});
+
+// ─── GET /admin/invoices/:id ─────────────────────────────────────────────────
+
+router.get("/invoices/:id", async (req, res) => {
+  const id = req.params.id as string;
+
+  const invoice = await prisma.invoice.findUnique({
+    where: { id },
+    include: {
+      business: { select: { id: true, name: true, surname: true, email: true, phone: true, companyName: true } },
+      orders: {
+        orderBy: { createdAt: "asc" },
+        include: { bulkOrder: { select: { referenceNumber: true } } },
+      },
+    },
+  });
+
+  if (!invoice) {
+    throw new AppError("Invoice not found", "INVOICE_NOT_FOUND", 404);
+  }
+
+  res.json({
+    invoice: {
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      business: invoice.business,
+      weekStart: invoice.weekStart.toISOString(),
+      weekEnd: invoice.weekEnd.toISOString(),
+      totalAmount: invoice.totalAmount,
+      status: invoice.status,
+      paidAt: invoice.paidAt?.toISOString() ?? null,
+      paidBy: invoice.paidBy,
+      orders: invoice.orders.map(formatOrder),
+    },
+  });
+});
+
+// ─── POST /admin/invoices/:id/mark-paid ──────────────────────────────────────
+
+router.post("/invoices/:id/mark-paid", async (req, res) => {
+  const id = req.params.id as string;
+
+  const invoice = await prisma.invoice.findUnique({ where: { id } });
+  if (!invoice) {
+    throw new AppError("Invoice not found", "INVOICE_NOT_FOUND", 404);
+  }
+  if (invoice.status === "PAID") {
+    throw new AppError("Invoice is already marked paid", "INVOICE_ALREADY_PAID", 409);
+  }
+  if (invoice.status === "VOID") {
+    throw new AppError("Invoice is voided", "INVOICE_VOIDED", 409);
+  }
+
+  const now = new Date();
+  const adminId = req.user!.userId;
+
+  const [updated] = await prisma.$transaction([
+    prisma.invoice.update({
+      where: { id },
+      data: { status: "PAID", paidAt: now, paidBy: adminId },
+    }),
+    prisma.order.updateMany({
+      where: { invoiceId: id },
+      data: { paymentStatus: "PAID" },
+    }),
+  ]);
+
+  res.json({
+    invoice: {
+      id: updated.id,
+      invoiceNumber: updated.invoiceNumber,
+      status: updated.status,
+      paidAt: updated.paidAt?.toISOString() ?? null,
+      paidBy: updated.paidBy,
+      totalAmount: updated.totalAmount,
+    },
+  });
+});
+
+// ─── PATCH /admin/users/:id/business ─────────────────────────────────────────
+
+router.patch("/users/:id/business", async (req, res) => {
+  const id = req.params.id as string;
+  const { isBusiness, companyName } = req.body as {
+    isBusiness?: boolean;
+    companyName?: string | null;
+  };
+
+  if (typeof isBusiness !== "boolean") {
+    throw new AppError("isBusiness must be a boolean", "VALIDATION_ERROR", 400);
+  }
+  if (isBusiness && !companyName) {
+    throw new AppError("companyName is required when promoting to business", "VALIDATION_ERROR", 400);
+  }
+
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) {
+    throw new AppError("User not found", "USER_NOT_FOUND", 404);
+  }
+
+  const updated = await prisma.user.update({
+    where: { id },
+    data: {
+      isBusiness,
+      companyName: isBusiness ? companyName ?? target.companyName : null,
+    },
+  });
+
+  res.json({
+    user: {
+      id: updated.id,
+      email: updated.email,
+      isBusiness: updated.isBusiness,
+      companyName: updated.companyName,
+    },
+  });
+});
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatOrder(order: any) {
@@ -569,6 +737,10 @@ function formatOrder(order: any) {
     paymentStatus: order.paymentStatus,
     receiverPhone: order.receiverPhone,
     receiverEmail: order.receiverEmail,
+    bulkOrderId: order.bulkOrderId ?? null,
+    bulkOrder: order.bulkOrder ?? null,
+    invoiceId: order.invoiceId ?? null,
+    invoice: order.invoice ?? null,
     createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
     updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
   };

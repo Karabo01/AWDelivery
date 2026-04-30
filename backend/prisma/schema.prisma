@@ -23,6 +23,14 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+  INVOICED
+}
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+  OVERDUE
+  VOID
 }
 
 enum ParcelSize {
@@ -60,10 +68,14 @@ model User {
   isVerified     Boolean  @default(false)
   defaultAddress Json?
   isAdmin        Boolean  @default(false)
+  isBusiness     Boolean  @default(false)
+  companyName    String?
   passwordChangedAt DateTime?
   createdAt      DateTime @default(now())
 
-  orders Order[]
+  orders     Order[]
+  bulkOrders BulkOrder[]
+  invoices   Invoice[]
 
   @@map("users")
 }
@@ -97,16 +109,53 @@ model Order {
   paymentStatus   PaymentStatus @default(PENDING)
   receiverPhone   String
   receiverEmail   String        @default("")
+  bulkOrderId     String?       @db.Uuid
+  invoiceId       String?       @db.Uuid
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  sender   User                 @relation(fields: [senderId], references: [id])
-  driver   Driver?              @relation(fields: [driverId], references: [id])
-  timeline OrderTimelineEntry[]
-  payments Payment[]
+  sender    User                 @relation(fields: [senderId], references: [id])
+  driver    Driver?              @relation(fields: [driverId], references: [id])
+  bulkOrder BulkOrder?           @relation(fields: [bulkOrderId], references: [id])
+  invoice   Invoice?             @relation(fields: [invoiceId], references: [id])
+  timeline  OrderTimelineEntry[]
+  payments  Payment[]
   notificationLogs NotificationLog[]
 
   @@map("orders")
+}
+
+model BulkOrder {
+  id              String   @id @default(uuid()) @db.Uuid
+  referenceNumber String   @unique
+  senderId        String   @db.Uuid
+  pickupAddress   Json
+  createdAt       DateTime @default(now())
+
+  sender User    @relation(fields: [senderId], references: [id])
+  orders Order[]
+
+  @@map("bulk_orders")
+}
+
+model Invoice {
+  id            String        @id @default(uuid()) @db.Uuid
+  invoiceNumber String        @unique
+  businessId    String        @db.Uuid
+  weekStart     DateTime
+  weekEnd       DateTime
+  totalAmount   Int           @default(0)
+  status        InvoiceStatus @default(OPEN)
+  paidAt        DateTime?
+  paidBy        String?       @db.Uuid
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  business User    @relation(fields: [businessId], references: [id])
+  orders   Order[]
+
+  @@unique([businessId, weekStart])
+  @@map("invoices")
 }
 
 model OrderTimelineEntry {

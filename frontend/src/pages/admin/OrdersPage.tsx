@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { getOrders, getDrivers, updateOrderStatus, assignDriver } from '@/services/admin.service'
-import { OrderStatus } from '@/types/order.types'
+import { OrderStatus, PaymentStatus } from '@/types/order.types'
 import { formatCentsToZar } from '@/lib/format'
 import type { Order } from '@/types/order.types'
 import type { Driver } from '@/types/driver.types'
@@ -26,12 +26,18 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
 interface AdminOrder extends Order {
   driverId?: string | null
   driver: Driver | null
+  bulkOrderId?: string | null
+  bulkOrder?: { id: string; referenceNumber: string } | null
+  invoiceId?: string | null
+  invoice?: { id: string; invoiceNumber: string; status: string } | null
 }
 
 function OrdersPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
+  const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | ''>('')
+  const [typeFilter, setTypeFilter] = useState<'' | 'SINGLE' | 'BULK'>('')
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null)
 
   // Ref for the order detail card
@@ -45,10 +51,12 @@ function OrdersPage() {
   }, [selectedOrder])
 
   const { data: ordersData, isLoading } = useQuery({
-    queryKey: ['admin-orders', search, statusFilter],
+    queryKey: ['admin-orders', search, statusFilter, paymentFilter, typeFilter],
     queryFn: () => getOrders({
       search: search || undefined,
       status: statusFilter || undefined,
+      paymentStatus: paymentFilter || undefined,
+      type: typeFilter || undefined,
       pageSize: 100,
     }),
   })
@@ -100,7 +108,7 @@ function OrdersPage() {
 
       <div className="flex gap-4 flex-wrap">
         <Input
-          placeholder="Search tracking # or phone..."
+          placeholder="Search tracking # or bulk ref or phone..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
@@ -114,6 +122,27 @@ function OrdersPage() {
           {STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>
               {status.replace(/_/g, ' ')}
+            </option>
+          ))}
+        </select>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as '' | 'SINGLE' | 'BULK')}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="">All types</option>
+          <option value="SINGLE">Single</option>
+          <option value="BULK">Bulk</option>
+        </select>
+        <select
+          value={paymentFilter}
+          onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | '')}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="">All payments</option>
+          {Object.values(PaymentStatus).map((p) => (
+            <option key={p} value={p}>
+              {p}
             </option>
           ))}
         </select>
@@ -223,13 +252,21 @@ function OrdersPage() {
               <CardContent className="py-3">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-sm font-medium">
                         {order.trackingNumber}
                       </span>
                       <Badge className={STATUS_COLORS[order.status]}>
                         {order.status.replace(/_/g, ' ')}
                       </Badge>
+                      {order.bulkOrder ? (
+                        <Badge className="bg-violet-500/20 text-violet-700">
+                          Bulk · {order.bulkOrder.referenceNumber}
+                        </Badge>
+                      ) : null}
+                      {order.paymentStatus === 'INVOICED' ? (
+                        <Badge className="bg-amber-500/20 text-amber-700">INVOICED</Badge>
+                      ) : null}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {formatAddress(order.pickupAddress)} → {formatAddress(order.deliveryAddress)}

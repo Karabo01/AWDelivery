@@ -7,6 +7,7 @@ import logoImage from '@/assets/brand/logo.png'
 function Navbar() {
   const navigate = useNavigate()
   const { isAuthenticated, isSuperAdmin, user, logoutUser } = useAuth()
+  const isBusiness = !!user?.isBusiness
 
   const handleLogout = async () => {
     await logoutUser()
@@ -34,7 +35,7 @@ function Navbar() {
             Home
           </NavLink>
           <NavLink
-            to="/order/new"
+            to={isBusiness ? '/order/bulk' : '/order/new'}
             className={({ isActive }) =>
               `rounded-full px-3 py-1.5 transition ${
                 isActive
@@ -43,8 +44,22 @@ function Navbar() {
               }`
             }
           >
-            New Order
+            {isBusiness ? 'New Bulk Order' : 'New Order'}
           </NavLink>
+          {isBusiness ? (
+            <NavLink
+              to="/invoices"
+              className={({ isActive }) =>
+                `rounded-full px-3 py-1.5 transition ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
+                }`
+              }
+            >
+              Invoices
+            </NavLink>
+          ) : null}
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>

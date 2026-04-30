@@ -10,6 +10,8 @@ import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import NewOrderPage from '@/pages/NewOrderPage'
+import BulkOrderPage from '@/pages/BulkOrderPage'
+import BusinessInvoicesPage from '@/pages/BusinessInvoicesPage'
 import RegisterPage from '@/pages/RegisterPage'
 import TrackingPage from '@/pages/TrackingPage'
 
@@ -36,6 +38,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <NewOrderPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/order/bulk"
+              element={
+                <ProtectedRoute>
+                  <BulkOrderPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/invoices"
+              element={
+                <ProtectedRoute>
+                  <BusinessInvoicesPage />
                 </ProtectedRoute>
               }
             />

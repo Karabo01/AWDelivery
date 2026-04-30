@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button'
 import DriversPage from './DriversPage'
 import OrdersPage from './OrdersPage'
 import FinancialsPage from './FinancialsPage'
+import InvoicesPage from './InvoicesPage'
 
-type Tab = 'orders' | 'drivers' | 'financials'
+type Tab = 'orders' | 'drivers' | 'financials' | 'invoices'
 
 function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('orders')
@@ -38,12 +39,20 @@ function AdminPage() {
         >
           Financials
         </Button>
+        <Button
+          variant={activeTab === 'invoices' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setActiveTab('invoices')}
+        >
+          Invoices
+        </Button>
       </div>
 
       <div className="pt-2">
         {activeTab === 'orders' && <OrdersPage />}
         {activeTab === 'drivers' && <DriversPage />}
         {activeTab === 'financials' && <FinancialsPage />}
+        {activeTab === 'invoices' && <InvoicesPage />}
       </div>
     </div>
   )

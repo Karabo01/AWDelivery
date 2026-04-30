@@ -14,6 +14,14 @@ export enum PaymentStatus {
   PAID = "PAID",
   FAILED = "FAILED",
   REFUNDED = "REFUNDED",
+  INVOICED = "INVOICED",
+}
+
+export enum InvoiceStatus {
+  OPEN = "OPEN",
+  PAID = "PAID",
+  OVERDUE = "OVERDUE",
+  VOID = "VOID",
 }
 
 export enum ParcelSize {
@@ -60,8 +68,32 @@ export interface Order {
   /** Phone number of the parcel receiver in E.164 format */
   readonly receiverPhone: string;
   readonly receiverEmail: string;
+  readonly bulkOrderId?: string | null;
+  readonly invoiceId?: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+export interface BulkOrder {
+  readonly id: string;
+  readonly referenceNumber: string;
+  readonly senderId: string;
+  readonly pickupAddress: Address;
+  readonly createdAt: string;
+}
+
+export interface Invoice {
+  readonly id: string;
+  readonly invoiceNumber: string;
+  readonly businessId: string;
+  readonly weekStart: string;
+  readonly weekEnd: string;
+  /** Total amount in cents */
+  readonly totalAmount: number;
+  readonly status: InvoiceStatus;
+  readonly paidAt?: string | null;
+  readonly paidBy?: string | null;
+  readonly orderCount?: number;
 }
 
 export interface OrderTimelineEntry {

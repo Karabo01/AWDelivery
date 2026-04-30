@@ -70,6 +70,8 @@ function formatUser(user: any) {
     defaultAddress: user.defaultAddress,
     isAdmin: user.isAdmin || isSuperAdminEmail(user.email),
     isSuperAdmin: isSuperAdminEmail(user.email),
+    isBusiness: !!user.isBusiness,
+    companyName: user.companyName ?? null,
     createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
   };
 }
@@ -96,12 +98,14 @@ async function generateAndSendOtp(email: string, purpose: string = "verification
 // ─── POST /auth/register ─────────────────────────────────────────────────────
 
 router.post("/register", validate(registerSchema), async (req, res) => {
-  const { name, surname, phone, email, password } = req.body as {
+  const { name, surname, phone, email, password, accountType, companyName } = req.body as {
     name: string;
     surname: string;
     phone: string;
     email: string;
     password: string;
+    accountType?: "INDIVIDUAL" | "BUSINESS";
+    companyName?: string;
   };
 
   // Check if phone already taken
@@ -117,9 +121,18 @@ router.post("/register", validate(registerSchema), async (req, res) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+  const isBusiness = accountType === "BUSINESS";
 
   await prisma.user.create({
-    data: { name, surname, phone, email, password: hashedPassword },
+    data: {
+      name,
+      surname,
+      phone,
+      email,
+      password: hashedPassword,
+      isBusiness,
+      companyName: isBusiness ? companyName ?? null : null,
+    },
   });
 
   // Send OTP for email verification
@@ -169,6 +182,7 @@ router.post("/login", validate(loginSchema), async (req, res) => {
       phone: user.phone,
       email: user.email,
       isAdmin: user.isAdmin || isSuperAdminEmail(user.email),
+      isBusiness: !!user.isBusiness,
     },
     env.JWT_SECRET,
     { expiresIn: "7d" },
@@ -222,6 +236,7 @@ router.post("/verify-otp", validate(verifyOtpSchema), async (req, res) => {
       phone: user.phone,
       email: user.email,
       isAdmin: user.isAdmin || isSuperAdminEmail(user.email),
+      isBusiness: !!user.isBusiness,
     },
     env.JWT_SECRET,
     { expiresIn: "7d" },

@@ -32,13 +32,20 @@ export const parcelDetailsSchema = z.object({
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
-export const registerSchema = z.object({
-  name: z.string().min(1).max(100),
-  surname: z.string().min(1).max(100),
-  phone: phoneSchema,
-  email: z.string().email().max(255),
-  password: z.string().min(8, "Password must be at least 8 characters").max(128),
-});
+export const registerSchema = z
+  .object({
+    name: z.string().min(1).max(100),
+    surname: z.string().min(1).max(100),
+    phone: phoneSchema,
+    email: z.string().email().max(255),
+    password: z.string().min(8, "Password must be at least 8 characters").max(128),
+    accountType: z.enum(["INDIVIDUAL", "BUSINESS"]).default("INDIVIDUAL"),
+    companyName: z.string().min(1).max(200).optional(),
+  })
+  .refine(
+    (data) => data.accountType !== "BUSINESS" || !!data.companyName,
+    { message: "Company name is required for business accounts", path: ["companyName"] },
+  );
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -78,6 +85,26 @@ export const createOrderSchema = z.object({
   parcelDetails: parcelDetailsSchema,
   receiverPhone: phoneSchema,
   receiverEmail: z.string().email().max(255),
+  quoteToken: z.string().min(1),
+});
+
+// ─── Bulk orders ─────────────────────────────────────────────────────────────
+
+export const bulkPackageSchema = z.object({
+  deliveryAddress: addressSchema,
+  parcelDetails: parcelDetailsSchema,
+  receiverPhone: phoneSchema,
+  receiverEmail: z.string().email().max(255),
+});
+
+export const bulkQuoteRequestSchema = z.object({
+  pickupAddress: addressSchema,
+  packages: z.array(bulkPackageSchema).min(1).max(50),
+});
+
+export const createBulkOrderSchema = z.object({
+  pickupAddress: addressSchema,
+  packages: z.array(bulkPackageSchema).min(1).max(50),
   quoteToken: z.string().min(1),
 });
 
@@ -137,7 +164,16 @@ export const adminOrdersQuerySchema = z.object({
       "DELAYED",
     ])
     .optional(),
+  paymentStatus: z.enum(["PENDING", "PAID", "FAILED", "REFUNDED", "INVOICED"]).optional(),
+  type: z.enum(["SINGLE", "BULK"]).optional(),
   search: z.string().optional(),
+});
+
+export const adminInvoicesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(["OPEN", "PAID", "OVERDUE", "VOID"]).optional(),
+  businessId: z.string().uuid().optional(),
 });
 
 export const adminUsersQuerySchema = z.object({

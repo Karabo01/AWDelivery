@@ -9,6 +9,7 @@ export interface AuthPayload {
   userId: string;
   phone: string;
   isAdmin: boolean;
+  isBusiness?: boolean;
   email?: string;
 }
 
@@ -37,7 +38,7 @@ export async function authenticate(
     // JWT revocation: reject tokens issued before last password change
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { passwordChangedAt: true },
+      select: { passwordChangedAt: true, isBusiness: true },
     });
 
     if (!user) {
@@ -51,7 +52,7 @@ export async function authenticate(
       }
     }
 
-    req.user = payload;
+    req.user = { ...payload, isBusiness: user.isBusiness };
     next();
   } catch (err) {
     if (err instanceof AppError) throw err;
@@ -67,6 +68,21 @@ export function requireAdmin(
   if (!req.user?.isAdmin) {
     throw new AppError(
       "User does not have admin privileges",
+      "FORBIDDEN",
+      403,
+    );
+  }
+  next();
+}
+
+export function requireBusiness(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
+  if (!req.user?.isBusiness) {
+    throw new AppError(
+      "This action is only available to business accounts",
       "FORBIDDEN",
       403,
     );

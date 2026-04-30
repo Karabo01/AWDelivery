@@ -1,20 +1,25 @@
 import { Router } from "express";
 import prisma from "../lib/prisma.js";
-import { authenticate } from "../middleware/auth.js";
+import { authenticate, requireBusiness } from "../middleware/auth.js";
 import { validate, validateQuery } from "../middleware/validate.js";
 import {
   quoteRequestSchema,
   createOrderSchema,
   paginationSchema,
+  bulkQuoteRequestSchema,
+  createBulkOrderSchema,
 } from "../validation/schemas.js";
 import { AppError } from "../utils/errors.js";
 import {
   calculateQuote,
   signQuoteToken,
   verifyQuoteToken,
+  signBulkQuoteToken,
+  verifyBulkQuoteToken,
 } from "../services/quote.service.js";
 import { buildPayFastFormData } from "../services/payfast.service.js";
-import { generateTrackingNumber } from "../utils/tracking.js";
+import { generateTrackingNumber, generateBulkReference } from "../utils/tracking.js";
+import { findOrCreateCurrentInvoice } from "../services/invoice.service.js";
 import { env } from "../lib/env.js";
 import { OrderStatus, PaymentStatus } from "@prisma/client";
 
@@ -176,6 +181,249 @@ router.get("/track/:trackingNumber", async (req, res) => {
   res.json({ order: sanitizedOrder, timeline });
 });
 
+// ─── POST /orders/bulk/quote ─────────────────────────────────────────────────
+
+router.post(
+  "/bulk/quote",
+  authenticate,
+  requireBusiness,
+  validate(bulkQuoteRequestSchema),
+  async (req, res) => {
+    const { pickupAddress, packages } = req.body as {
+      pickupAddress: any;
+      packages: any[];
+    };
+
+    const tokenPackages = packages.map((pkg) => {
+      const q = calculateQuote(
+        pickupAddress.coordinates.lat,
+        pickupAddress.coordinates.lng,
+        pkg.deliveryAddress.coordinates.lat,
+        pkg.deliveryAddress.coordinates.lng,
+        pkg.parcelDetails.size,
+      );
+      return { amount: q.amount, distanceKm: q.distanceKm, breakdown: q.breakdown };
+    });
+
+    const total = tokenPackages.reduce((sum, p) => sum + p.amount, 0);
+
+    const quoteToken = signBulkQuoteToken({
+      pickupAddress,
+      packages: tokenPackages.map((p) => ({ amount: p.amount, distanceKm: p.distanceKm })),
+      total,
+      count: packages.length,
+    });
+
+    res.json({
+      quoteToken,
+      total,
+      packages: packages.map((pkg, i) => ({
+        deliveryAddress: pkg.deliveryAddress,
+        parcelDetails: pkg.parcelDetails,
+        receiverPhone: pkg.receiverPhone,
+        receiverEmail: pkg.receiverEmail,
+        amount: tokenPackages[i].amount,
+        distanceKm: tokenPackages[i].distanceKm,
+        breakdown: tokenPackages[i].breakdown,
+      })),
+    });
+  },
+);
+
+// ─── POST /orders/bulk ───────────────────────────────────────────────────────
+
+router.post(
+  "/bulk",
+  authenticate,
+  requireBusiness,
+  validate(createBulkOrderSchema),
+  async (req, res) => {
+    const { pickupAddress, packages, quoteToken } = req.body as {
+      pickupAddress: any;
+      packages: any[];
+      quoteToken: string;
+    };
+
+    let bulkQuote;
+    try {
+      bulkQuote = verifyBulkQuoteToken(quoteToken);
+    } catch (err: any) {
+      if (err.name === "TokenExpiredError") {
+        throw new AppError("Quote token has expired", "QUOTE_EXPIRED", 400);
+      }
+      throw new AppError("Quote token is invalid", "QUOTE_INVALID", 400);
+    }
+
+    if (bulkQuote.count !== packages.length) {
+      throw new AppError("Quote token does not match submitted packages", "QUOTE_INVALID", 400);
+    }
+
+    const senderId = req.user!.userId;
+    const now = new Date();
+
+    const trackingNumbers: string[] = [];
+    for (let i = 0; i < packages.length; i++) {
+      trackingNumbers.push(await generateTrackingNumber(prisma));
+    }
+    const referenceNumber = await generateBulkReference(prisma);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const invoice = await findOrCreateCurrentInvoice(tx, senderId, now);
+
+      const bulkOrder = await tx.bulkOrder.create({
+        data: { referenceNumber, senderId, pickupAddress, createdAt: now },
+      });
+
+      const createdOrders = [] as any[];
+      for (let i = 0; i < packages.length; i++) {
+        const pkg = packages[i];
+        const amount = bulkQuote.packages[i].amount;
+        const order = await tx.order.create({
+          data: {
+            trackingNumber: trackingNumbers[i],
+            senderId,
+            pickupAddress,
+            deliveryAddress: pkg.deliveryAddress,
+            parcelDetails: pkg.parcelDetails,
+            status: OrderStatus.CONFIRMED,
+            quoteAmount: amount,
+            paymentStatus: PaymentStatus.INVOICED,
+            receiverPhone: pkg.receiverPhone,
+            receiverEmail: pkg.receiverEmail,
+            bulkOrderId: bulkOrder.id,
+            invoiceId: invoice.id,
+            createdAt: now,
+            updatedAt: now,
+            timeline: {
+              create: {
+                status: OrderStatus.CONFIRMED,
+                timestamp: now,
+                note: `Created via bulk submission ${referenceNumber}`,
+              },
+            },
+          },
+        });
+        createdOrders.push(order);
+      }
+
+      const updatedInvoice = await tx.invoice.update({
+        where: { id: invoice.id },
+        data: { totalAmount: { increment: bulkQuote.total } },
+      });
+
+      return { bulkOrder, orders: createdOrders, invoice: updatedInvoice };
+    });
+
+    res.status(201).json({
+      bulkOrder: {
+        id: result.bulkOrder.id,
+        referenceNumber: result.bulkOrder.referenceNumber,
+        createdAt: result.bulkOrder.createdAt.toISOString(),
+        pickupAddress: result.bulkOrder.pickupAddress,
+      },
+      orders: result.orders.map(formatOrder),
+      invoice: {
+        id: result.invoice.id,
+        invoiceNumber: result.invoice.invoiceNumber,
+        weekStart: result.invoice.weekStart.toISOString(),
+        weekEnd: result.invoice.weekEnd.toISOString(),
+        totalAmount: result.invoice.totalAmount,
+        status: result.invoice.status,
+      },
+    });
+  },
+);
+
+// ─── GET /orders/bulk/mine ───────────────────────────────────────────────────
+
+router.get(
+  "/bulk/mine",
+  authenticate,
+  requireBusiness,
+  validateQuery(paginationSchema),
+  async (req, res) => {
+    const { page, pageSize } = (req as any).validatedQuery;
+    const senderId = req.user!.userId;
+
+    const [bulkOrders, total] = await Promise.all([
+      prisma.bulkOrder.findMany({
+        where: { senderId },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          orders: {
+            select: {
+              id: true,
+              trackingNumber: true,
+              status: true,
+              quoteAmount: true,
+              paymentStatus: true,
+              deliveryAddress: true,
+            },
+          },
+        },
+      }),
+      prisma.bulkOrder.count({ where: { senderId } }),
+    ]);
+
+    res.json({
+      data: bulkOrders.map((b) => ({
+        id: b.id,
+        referenceNumber: b.referenceNumber,
+        pickupAddress: b.pickupAddress,
+        createdAt: b.createdAt.toISOString(),
+        packageCount: b.orders.length,
+        totalAmount: b.orders.reduce((s, o) => s + o.quoteAmount, 0),
+        orders: b.orders,
+      })),
+      total,
+      page,
+      pageSize,
+    });
+  },
+);
+
+// ─── GET /orders/invoices/mine ───────────────────────────────────────────────
+
+router.get(
+  "/invoices/mine",
+  authenticate,
+  requireBusiness,
+  validateQuery(paginationSchema),
+  async (req, res) => {
+    const { page, pageSize } = (req as any).validatedQuery;
+    const businessId = req.user!.userId;
+
+    const [invoices, total] = await Promise.all([
+      prisma.invoice.findMany({
+        where: { businessId },
+        orderBy: { weekStart: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: { _count: { select: { orders: true } } },
+      }),
+      prisma.invoice.count({ where: { businessId } }),
+    ]);
+
+    res.json({
+      data: invoices.map((inv) => ({
+        id: inv.id,
+        invoiceNumber: inv.invoiceNumber,
+        weekStart: inv.weekStart.toISOString(),
+        weekEnd: inv.weekEnd.toISOString(),
+        totalAmount: inv.totalAmount,
+        status: inv.status,
+        paidAt: inv.paidAt?.toISOString() ?? null,
+        orderCount: inv._count.orders,
+      })),
+      total,
+      page,
+      pageSize,
+    });
+  },
+);
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatOrder(order: any) {
@@ -191,6 +439,8 @@ function formatOrder(order: any) {
     paymentStatus: order.paymentStatus,
     receiverPhone: order.receiverPhone,
     receiverEmail: order.receiverEmail,
+    bulkOrderId: order.bulkOrderId ?? null,
+    invoiceId: order.invoiceId ?? null,
     createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
     updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
   };

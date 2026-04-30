@@ -196,6 +196,7 @@ export const handlers: RequestHandler[] = [
 			email,
 			isVerified: true,
 			isAdmin: false,
+			isBusiness: false,
 			createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
 		}
 
@@ -240,6 +241,7 @@ export const handlers: RequestHandler[] = [
 			email,
 			isVerified: true,
 			isAdmin: false,
+			isBusiness: false,
 			createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
 		}
 

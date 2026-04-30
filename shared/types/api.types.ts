@@ -1,5 +1,14 @@
-import type { Address, Order, OrderStatus, OrderTimeline, ParcelDetails, ParcelSize } from "./order.types.js";
-import type { User } from "./user.types.js";
+import type {
+  Address,
+  BulkOrder,
+  Invoice,
+  Order,
+  OrderStatus,
+  OrderTimeline,
+  ParcelDetails,
+  ParcelSize,
+} from "./order.types.js";
+import type { AccountType, User } from "./user.types.js";
 import type { NotificationTemplateType } from "./notification.types.js";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -10,6 +19,8 @@ export interface RegisterRequest {
   readonly phone: string;
   readonly email: string;
   readonly password: string;
+  readonly accountType?: AccountType;
+  readonly companyName?: string;
 }
 
 export interface RegisterResponse {
@@ -69,9 +80,11 @@ export interface QuoteRequest {
 }
 
 export interface QuoteBreakdown {
-  readonly baseFare: number;
-  readonly distanceFare: number;
-  readonly sizeSurcharge: number;
+  readonly baseFare?: number;
+  readonly distanceFare?: number;
+  readonly sizeSurcharge?: number;
+  /** Set when the JHB intra-city flat rate applies (in cents) */
+  readonly flatRate?: number;
 }
 
 export interface QuoteResponse {
@@ -103,6 +116,48 @@ export interface CreateOrderResponse {
 export interface TrackOrderResponse {
   readonly order: Order;
   readonly timeline: OrderTimeline;
+}
+
+// ─── Bulk Orders ─────────────────────────────────────────────────────────────
+
+export interface BulkPackageInput {
+  readonly deliveryAddress: Address;
+  readonly parcelDetails: ParcelDetails;
+  readonly receiverPhone: string;
+  readonly receiverEmail: string;
+}
+
+export interface BulkQuoteRequest {
+  readonly pickupAddress: Address;
+  readonly packages: readonly BulkPackageInput[];
+}
+
+export interface BulkPackageQuote extends BulkPackageInput {
+  readonly amount: number;
+  readonly distanceKm: number;
+  readonly breakdown: QuoteBreakdown;
+}
+
+export interface BulkQuoteResponse {
+  readonly quoteToken: string;
+  readonly total: number;
+  readonly packages: readonly BulkPackageQuote[];
+}
+
+export interface CreateBulkOrderRequest {
+  readonly pickupAddress: Address;
+  readonly packages: readonly BulkPackageInput[];
+  readonly quoteToken: string;
+}
+
+export interface CreateBulkOrderResponse {
+  readonly bulkOrder: BulkOrder;
+  readonly orders: readonly Order[];
+  readonly invoice: Invoice;
+}
+
+export interface MarkInvoicePaidResponse {
+  readonly invoice: Invoice;
 }
 
 // ─── Payments ────────────────────────────────────────────────────────────────

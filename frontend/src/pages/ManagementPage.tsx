@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { getUsers, setUserAdmin, deleteUser } from '@/services/admin.service'
+import { getUsers, setUserAdmin, setUserBusiness, deleteUser } from '@/services/admin.service'
 import useAuth from '@/hooks/useAuth'
 
 type ManagedUser = {
@@ -16,6 +16,8 @@ type ManagedUser = {
   phone: string
   isAdmin: boolean
   isSuperAdmin?: boolean
+  isBusiness: boolean
+  companyName?: string | null
   isVerified: boolean
   orderCount: number
   createdAt: string
@@ -44,6 +46,18 @@ function ManagementPage() {
     },
   })
 
+  const businessMutation = useMutation({
+    mutationFn: ({ userId, isBusiness, companyName }: { userId: string; isBusiness: boolean; companyName?: string }) =>
+      setUserBusiness(userId, isBusiness, companyName),
+    onSuccess: () => {
+      setActionError(null)
+      queryClient.invalidateQueries({ queryKey: ['management-users'] })
+    },
+    onError: (err: any) => {
+      setActionError(err?.response?.data?.message ?? 'Failed to update business flag.')
+    },
+  })
+
   const deleteMutation = useMutation({
     mutationFn: (userId: string) => deleteUser(userId),
     onSuccess: () => {
@@ -60,6 +74,19 @@ function ManagementPage() {
   const handleToggleAdmin = (u: ManagedUser) => {
     if (u.isSuperAdmin) return
     adminMutation.mutate({ userId: u.id, isAdmin: !u.isAdmin })
+  }
+
+  const handleToggleBusiness = (u: ManagedUser) => {
+    if (u.isBusiness) {
+      businessMutation.mutate({ userId: u.id, isBusiness: false })
+      return
+    }
+    const companyName = window.prompt(
+      `Promote ${u.name} ${u.surname} to a business account.\n\nEnter company name:`,
+      u.companyName ?? '',
+    )
+    if (!companyName?.trim()) return
+    businessMutation.mutate({ userId: u.id, isBusiness: true, companyName: companyName.trim() })
   }
 
   const handleDelete = (u: ManagedUser) => {
@@ -132,6 +159,11 @@ function ManagementPage() {
                           ) : (
                             <Badge className="bg-muted text-muted-foreground">User</Badge>
                           )}
+                          {u.isBusiness ? (
+                            <Badge className="ml-2 bg-violet-500/20 text-violet-700">
+                              Business{u.companyName ? ` · ${u.companyName}` : ''}
+                            </Badge>
+                          ) : null}
                           {!u.isVerified ? (
                             <Badge className="ml-2 bg-muted text-muted-foreground">Unverified</Badge>
                           ) : null}
@@ -146,6 +178,14 @@ function ManagementPage() {
                               onClick={() => handleToggleAdmin(u)}
                             >
                               {u.isAdmin ? 'Revoke admin' : 'Grant admin'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={businessMutation.isPending}
+                              onClick={() => handleToggleBusiness(u)}
+                            >
+                              {u.isBusiness ? 'Revoke business' : 'Make business'}
                             </Button>
                             <Button
                               size="sm"
