@@ -1,5 +1,6 @@
 import api from '@/services/api'
 import type {
+	AvailableWaybillsResponse,
 	BulkQuoteRequest,
 	BulkQuoteResponse,
 	CreateBulkOrderRequest,
@@ -11,7 +12,7 @@ import type {
 	QuoteResponse,
 	TrackOrderResponse,
 } from '@/types'
-import type { Invoice, Order } from '@/types/order.types'
+import type { Invoice, Order, Waybill, WaybillStatus } from '@/types/order.types'
 
 type OrdersQuery = {
 	page?: number
@@ -57,12 +58,32 @@ async function getMyInvoices(query?: OrdersQuery) {
 	return data
 }
 
+async function getAvailableWaybills(limit = 200) {
+	const { data } = await api.get<AvailableWaybillsResponse>('/orders/waybills/available', {
+		params: { limit },
+	})
+	return data
+}
+
+async function getMyWaybills(query?: {
+	page?: number
+	pageSize?: number
+	status?: WaybillStatus
+}) {
+	const { data } = await api.get<
+		PaginatedResponse<Waybill> & { counts: { UNUSED: number; USED: number; VOID: number } }
+	>('/orders/waybills/mine', { params: query })
+	return data
+}
+
 export {
 	createBulkOrder,
 	createOrder,
+	getAvailableWaybills,
 	getBulkQuote,
 	getMyInvoices,
 	getMyOrders,
+	getMyWaybills,
 	getQuote,
 	trackOrder,
 }

@@ -60,6 +60,20 @@ function Navbar() {
               Invoices
             </NavLink>
           ) : null}
+          {isBusiness ? (
+            <NavLink
+              to="/waybills"
+              className={({ isActive }) =>
+                `rounded-full px-3 py-1.5 transition ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
+                }`
+              }
+            >
+              Waybills
+            </NavLink>
+          ) : null}
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>

@@ -12,6 +12,7 @@ import LoginPage from '@/pages/LoginPage'
 import NewOrderPage from '@/pages/NewOrderPage'
 import BulkOrderPage from '@/pages/BulkOrderPage'
 import BusinessInvoicesPage from '@/pages/BusinessInvoicesPage'
+import BusinessWaybillsPage from '@/pages/BusinessWaybillsPage'
 import RegisterPage from '@/pages/RegisterPage'
 import TrackingPage from '@/pages/TrackingPage'
 
@@ -54,6 +55,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <BusinessInvoicesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/waybills"
+              element={
+                <ProtectedRoute>
+                  <BusinessWaybillsPage />
                 </ProtectedRoute>
               }
             />

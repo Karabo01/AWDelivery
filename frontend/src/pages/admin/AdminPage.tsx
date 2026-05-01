@@ -4,8 +4,9 @@ import DriversPage from './DriversPage'
 import OrdersPage from './OrdersPage'
 import FinancialsPage from './FinancialsPage'
 import InvoicesPage from './InvoicesPage'
+import WaybillsPage from './WaybillsPage'
 
-type Tab = 'orders' | 'drivers' | 'financials' | 'invoices'
+type Tab = 'orders' | 'drivers' | 'financials' | 'invoices' | 'waybills'
 
 function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('orders')
@@ -46,6 +47,13 @@ function AdminPage() {
         >
           Invoices
         </Button>
+        <Button
+          variant={activeTab === 'waybills' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setActiveTab('waybills')}
+        >
+          Waybills
+        </Button>
       </div>
 
       <div className="pt-2">
@@ -53,6 +61,7 @@ function AdminPage() {
         {activeTab === 'drivers' && <DriversPage />}
         {activeTab === 'financials' && <FinancialsPage />}
         {activeTab === 'invoices' && <InvoicesPage />}
+        {activeTab === 'waybills' && <WaybillsPage />}
       </div>
     </div>
   )

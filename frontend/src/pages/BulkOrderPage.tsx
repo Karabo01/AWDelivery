@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 
 import AddressAutocompleteField from '@/components/shared/AddressAutocompleteField'
@@ -9,8 +9,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { formatCentsToZar, formatToSaE164, isValidSaE164 } from '@/lib/format'
-import { createBulkOrder, getBulkQuote } from '@/services/orders.service'
-import type { BulkPackageInput } from '@/types'
+import {
+  createBulkOrder,
+  getAvailableWaybills,
+  getBulkQuote,
+} from '@/services/orders.service'
+import type { BulkPackageWithWaybill } from '@/types'
 import { ParcelSize } from '@/types'
 
 type PackageDraft = {
@@ -23,6 +27,7 @@ type PackageDraft = {
   description: string
   receiverPhone: string
   receiverEmail: string
+  waybillId: string
 }
 
 const emptyPackage = (): PackageDraft => ({
@@ -35,6 +40,7 @@ const emptyPackage = (): PackageDraft => ({
   description: '',
   receiverPhone: '+27',
   receiverEmail: '',
+  waybillId: '',
 })
 
 const sizeOptions = [
@@ -61,6 +67,13 @@ function BulkOrderPage() {
     total: number
   } | null>(null)
 
+  const waybillsQuery = useQuery({
+    queryKey: ['available-waybills'],
+    queryFn: () => getAvailableWaybills(500),
+  })
+  const availableWaybills = waybillsQuery.data?.data ?? []
+  const totalUnused = waybillsQuery.data?.totalUnused ?? 0
+
   const quoteMutation = useMutation({ mutationFn: getBulkQuote })
   const submitMutation = useMutation({ mutationFn: createBulkOrder })
 
@@ -82,7 +95,10 @@ function BulkOrderPage() {
     setQuoteTotal(null)
   }
 
-  const buildPayload = (): { pickupAddressObj: any; packageObjs: BulkPackageInput[] } | null => {
+  const buildPayload = (): {
+    pickupAddressObj: any
+    packageObjs: BulkPackageWithWaybill[]
+  } | null => {
     if (!pickupAddress || pickupLat === 0) {
       setServerError('Please select a pickup address.')
       return null
@@ -107,6 +123,21 @@ function BulkOrderPage() {
         setServerError(`Package ${i + 1}: weight must be at least 0.1kg.`)
         return null
       }
+      if (!p.waybillId) {
+        setServerError(`Package ${i + 1}: please allocate a waybill.`)
+        return null
+      }
+    }
+
+    // Detect duplicates client-side
+    const seenWaybills = new Set<string>()
+    for (let i = 0; i < packages.length; i++) {
+      const id = packages[i].waybillId
+      if (seenWaybills.has(id)) {
+        setServerError(`Package ${i + 1}: this waybill is already used on another package.`)
+        return null
+      }
+      seenWaybills.add(id)
     }
 
     const pickupAddressObj = {
@@ -119,7 +150,7 @@ function BulkOrderPage() {
       notes: pickupNotes || undefined,
     }
 
-    const packageObjs: BulkPackageInput[] = packages.map((p) => ({
+    const packageObjs: BulkPackageWithWaybill[] = packages.map((p) => ({
       deliveryAddress: {
         street: p.deliveryAddress,
         suburb: '',
@@ -136,6 +167,7 @@ function BulkOrderPage() {
       },
       receiverPhone: p.receiverPhone,
       receiverEmail: p.receiverEmail,
+      waybillId: p.waybillId,
     }))
 
     return { pickupAddressObj, packageObjs }
@@ -178,6 +210,7 @@ function BulkOrderPage() {
         orderCount: res.orders.length,
         total: quoteTotal ?? 0,
       })
+      waybillsQuery.refetch()
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? 'Unable to submit bulk order. Please try again.'
       setServerError(msg)
@@ -234,7 +267,18 @@ function BulkOrderPage() {
           One pickup, multiple destinations. Packages within Johannesburg that fit in a shoebox are
           R70 flat. Bulk orders are billed weekly via EFT.
         </p>
+        <p className="mt-2 text-sm">
+          <span className="text-muted-foreground">Waybills available: </span>
+          <span className="font-semibold">{totalUnused}</span>
+        </p>
       </div>
+
+      {!waybillsQuery.isLoading && totalUnused === 0 ? (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          You have no waybills left. Contact the depot to print a new batch before submitting a
+          bulk order.
+        </div>
+      ) : null}
 
       <Card className="border-border/85 bg-card/95">
         <CardHeader>
@@ -362,6 +406,31 @@ function BulkOrderPage() {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label>Waybill sticker</Label>
+                <select
+                  value={pkg.waybillId}
+                  onChange={(e) => updatePackage(idx, { waybillId: e.target.value })}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Select a waybill code…</option>
+                  {availableWaybills
+                    .filter(
+                      (w) =>
+                        w.id === pkg.waybillId ||
+                        !packages.some((p, i) => i !== idx && p.waybillId === w.id),
+                    )
+                    .map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.code}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Stick the matching sticker on the parcel before handover.
+                </p>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -396,7 +465,7 @@ function BulkOrderPage() {
         <Button
           type="button"
           onClick={handleSubmit}
-          disabled={!quoteToken || submitMutation.isPending}
+          disabled={!quoteToken || submitMutation.isPending || totalUnused === 0}
         >
           Submit bulk order
         </Button>

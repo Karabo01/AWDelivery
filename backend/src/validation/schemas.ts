@@ -97,6 +97,10 @@ export const bulkPackageSchema = z.object({
   receiverEmail: z.string().email().max(255),
 });
 
+export const bulkPackageWithWaybillSchema = bulkPackageSchema.extend({
+  waybillId: z.string().uuid(),
+});
+
 export const bulkQuoteRequestSchema = z.object({
   pickupAddress: addressSchema,
   packages: z.array(bulkPackageSchema).min(1).max(50),
@@ -104,8 +108,40 @@ export const bulkQuoteRequestSchema = z.object({
 
 export const createBulkOrderSchema = z.object({
   pickupAddress: addressSchema,
-  packages: z.array(bulkPackageSchema).min(1).max(50),
+  packages: z.array(bulkPackageWithWaybillSchema).min(1).max(50),
   quoteToken: z.string().min(1),
+});
+
+// ─── Waybills ────────────────────────────────────────────────────────────────
+
+export const createWaybillBatchSchema = z.object({
+  businessId: z.string().uuid(),
+  size: z.number().int().min(1).max(2000),
+  notes: z.string().max(500).optional(),
+});
+
+export const adminWaybillBatchesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  businessId: z.string().uuid().optional(),
+});
+
+export const adminWaybillsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(200).default(50),
+  businessId: z.string().uuid().optional(),
+  status: z.enum(["UNUSED", "USED", "VOID"]).optional(),
+  search: z.string().optional(),
+});
+
+export const businessWaybillsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(200).default(50),
+  status: z.enum(["UNUSED", "USED", "VOID"]).optional(),
+});
+
+export const voidWaybillSchema = z.object({
+  reason: z.string().max(500).optional(),
 });
 
 // ─── Payments ────────────────────────────────────────────────────────────────

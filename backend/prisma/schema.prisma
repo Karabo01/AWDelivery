@@ -33,6 +33,12 @@ enum InvoiceStatus {
   VOID
 }
 
+enum WaybillStatus {
+  UNUSED
+  USED
+  VOID
+}
+
 enum ParcelSize {
   SMALL
   MEDIUM
@@ -73,9 +79,11 @@ model User {
   passwordChangedAt DateTime?
   createdAt      DateTime @default(now())
 
-  orders     Order[]
-  bulkOrders BulkOrder[]
-  invoices   Invoice[]
+  orders         Order[]
+  bulkOrders     BulkOrder[]
+  invoices       Invoice[]
+  waybills       Waybill[]
+  waybillBatches WaybillBatch[]
 
   @@map("users")
 }
@@ -111,6 +119,8 @@ model Order {
   receiverEmail   String        @default("")
   bulkOrderId     String?       @db.Uuid
   invoiceId       String?       @db.Uuid
+  waybillId       String?       @unique @db.Uuid
+  waybillCode     String?       @unique
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -118,6 +128,7 @@ model Order {
   driver    Driver?              @relation(fields: [driverId], references: [id])
   bulkOrder BulkOrder?           @relation(fields: [bulkOrderId], references: [id])
   invoice   Invoice?             @relation(fields: [invoiceId], references: [id])
+  waybill   Waybill?             @relation(fields: [waybillId], references: [id])
   timeline  OrderTimelineEntry[]
   payments  Payment[]
   notificationLogs NotificationLog[]
@@ -156,6 +167,42 @@ model Invoice {
 
   @@unique([businessId, weekStart])
   @@map("invoices")
+}
+
+model WaybillBatch {
+  id          String    @id @default(uuid()) @db.Uuid
+  batchNumber String    @unique
+  businessId  String    @db.Uuid
+  size        Int
+  notes       String?
+  createdBy   String    @db.Uuid
+  printedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  business User      @relation(fields: [businessId], references: [id])
+  waybills Waybill[]
+
+  @@map("waybill_batches")
+}
+
+model Waybill {
+  id         String        @id @default(uuid()) @db.Uuid
+  code       String        @unique
+  businessId String        @db.Uuid
+  batchId    String        @db.Uuid
+  status     WaybillStatus @default(UNUSED)
+  orderId    String?       @unique @db.Uuid
+  issuedAt   DateTime      @default(now())
+  usedAt     DateTime?
+  voidedAt   DateTime?
+  voidReason String?
+
+  business User         @relation(fields: [businessId], references: [id])
+  batch    WaybillBatch @relation(fields: [batchId], references: [id])
+  order    Order?
+
+  @@index([businessId, status])
+  @@map("waybills")
 }
 
 model OrderTimelineEntry {

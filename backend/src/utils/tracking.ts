@@ -53,6 +53,39 @@ export function generateInvoiceNumber(weekStart: Date, sequence: number): string
   return `INV-${year}${String(week).padStart(2, "0")}-${seq}`;
 }
 
+export async function generateUniqueWaybillCodes(
+  prisma: PrismaClient,
+  count: number,
+): Promise<string[]> {
+  const codes = new Set<string>();
+  while (codes.size < count) {
+    const candidate = `WB-${generateSuffix()}`;
+    if (codes.has(candidate)) continue;
+    const existing = await prisma.waybill.findUnique({
+      where: { code: candidate },
+      select: { id: true },
+    });
+    if (existing) continue;
+    codes.add(candidate);
+  }
+  return Array.from(codes);
+}
+
+export async function generateBatchNumber(
+  prisma: PrismaClient,
+  date: Date = new Date(),
+): Promise<string> {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const prefix = `BATCH-${year}${month}-`;
+
+  const existing = await prisma.waybillBatch.count({
+    where: { batchNumber: { startsWith: prefix } },
+  });
+
+  return `${prefix}${String(existing + 1).padStart(4, "0")}`;
+}
+
 function isoWeekNumber(d: Date): number {
   const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
   const dayNum = date.getUTCDay() || 7;

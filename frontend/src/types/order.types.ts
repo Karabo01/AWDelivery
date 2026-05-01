@@ -24,6 +24,12 @@ export enum InvoiceStatus {
   VOID = 'VOID',
 }
 
+export enum WaybillStatus {
+  UNUSED = 'UNUSED',
+  USED = 'USED',
+  VOID = 'VOID',
+}
+
 export enum ParcelSize {
   SMALL = 'SMALL',
   MEDIUM = 'MEDIUM',
@@ -66,8 +72,38 @@ export interface Order {
   readonly receiverEmail: string
   readonly bulkOrderId?: string | null
   readonly invoiceId?: string | null
+  readonly waybillId?: string | null
+  readonly waybillCode?: string | null
   readonly createdAt: string
   readonly updatedAt: string
+}
+
+export interface Waybill {
+  readonly id: string
+  readonly code: string
+  readonly status: WaybillStatus
+  readonly batch?: { id: string; batchNumber: string }
+  readonly order?: { id: string; trackingNumber: string } | null
+  readonly issuedAt: string
+  readonly usedAt?: string | null
+  readonly voidedAt?: string | null
+}
+
+export interface WaybillBatchSummary {
+  readonly id: string
+  readonly batchNumber: string
+  readonly business: {
+    id: string
+    name: string
+    surname: string
+    email: string
+    companyName: string | null
+  }
+  readonly size: number
+  readonly notes?: string | null
+  readonly counts: { unused: number; used: number; void: number }
+  readonly printedAt: string | null
+  readonly createdAt: string
 }
 
 export interface BulkOrder {

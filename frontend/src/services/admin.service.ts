@@ -1,5 +1,14 @@
 import api from '@/services/api'
-import type { Invoice, InvoiceStatus, Order, OrderStatus, PaymentStatus } from '@/types/order.types'
+import type {
+  Invoice,
+  InvoiceStatus,
+  Order,
+  OrderStatus,
+  PaymentStatus,
+  Waybill,
+  WaybillBatchSummary,
+  WaybillStatus,
+} from '@/types/order.types'
 import type { User } from '@/types/user.types'
 import type { Driver, CreateDriverPayload, UpdateDriverPayload, AdminStats } from '@/types/driver.types'
 
@@ -149,6 +158,77 @@ export async function setUserBusiness(
   companyName?: string,
 ): Promise<{ user: { id: string; email: string; isBusiness: boolean; companyName: string | null } }> {
   const response = await api.patch(`/admin/users/${userId}/business`, { isBusiness, companyName })
+  return response.data
+}
+
+// ─── Waybills ────────────────────────────────────────────────────────────────
+
+export async function createWaybillBatch(payload: {
+  businessId: string
+  size: number
+  notes?: string
+}): Promise<{
+  batch: WaybillBatchSummary & { createdBy: string }
+  codes: string[]
+}> {
+  const response = await api.post('/admin/waybill-batches', payload)
+  return response.data
+}
+
+export async function getWaybillBatches(params?: {
+  page?: number
+  pageSize?: number
+  businessId?: string
+}): Promise<PaginatedResponse<WaybillBatchSummary>> {
+  const response = await api.get('/admin/waybill-batches', { params })
+  return response.data
+}
+
+export async function getWaybillBatch(batchId: string): Promise<{
+  batch: WaybillBatchSummary & {
+    waybills: Array<{
+      id: string
+      code: string
+      status: WaybillStatus
+      orderId: string | null
+      usedAt: string | null
+      voidedAt: string | null
+      voidReason: string | null
+    }>
+  }
+}> {
+  const response = await api.get(`/admin/waybill-batches/${batchId}`)
+  return response.data
+}
+
+export async function markBatchPrinted(batchId: string): Promise<{
+  batch: { id: string; batchNumber: string; printedAt: string | null }
+}> {
+  const response = await api.post(`/admin/waybill-batches/${batchId}/printed`)
+  return response.data
+}
+
+export function downloadBatchCsvUrl(batchId: string): string {
+  const base = (api.defaults.baseURL ?? '').replace(/\/$/, '')
+  return `${base}/admin/waybill-batches/${batchId}/print.csv`
+}
+
+export async function getWaybills(params?: {
+  page?: number
+  pageSize?: number
+  businessId?: string
+  status?: WaybillStatus
+  search?: string
+}): Promise<PaginatedResponse<Waybill & { business: { id: string; name: string; surname: string; email: string; companyName: string | null } }>> {
+  const response = await api.get('/admin/waybills', { params })
+  return response.data
+}
+
+export async function voidWaybill(
+  waybillId: string,
+  reason?: string,
+): Promise<{ waybill: Waybill }> {
+  const response = await api.post(`/admin/waybills/${waybillId}/void`, { reason })
   return response.data
 }
 

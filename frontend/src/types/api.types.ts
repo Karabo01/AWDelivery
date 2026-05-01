@@ -116,6 +116,26 @@ export interface BulkPackageInput {
   readonly receiverEmail: string
 }
 
+export interface BulkPackageWithWaybill extends BulkPackageInput {
+  readonly waybillId: string
+}
+
+export interface CreateWaybillBatchRequest {
+  readonly businessId: string
+  readonly size: number
+  readonly notes?: string
+}
+
+export interface AvailableWaybill {
+  readonly id: string
+  readonly code: string
+}
+
+export interface AvailableWaybillsResponse {
+  readonly data: readonly AvailableWaybill[]
+  readonly totalUnused: number
+}
+
 export interface BulkQuoteRequest {
   readonly pickupAddress: Address
   readonly packages: readonly BulkPackageInput[]
@@ -135,7 +155,7 @@ export interface BulkQuoteResponse {
 
 export interface CreateBulkOrderRequest {
   readonly pickupAddress: Address
-  readonly packages: readonly BulkPackageInput[]
+  readonly packages: readonly BulkPackageWithWaybill[]
   readonly quoteToken: string
 }
 

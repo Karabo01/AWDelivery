@@ -13,7 +13,12 @@ import {
   assignDriverSchema,
   adminDriversQuerySchema,
   adminInvoicesQuerySchema,
+  createWaybillBatchSchema,
+  adminWaybillBatchesQuerySchema,
+  adminWaybillsQuerySchema,
+  voidWaybillSchema,
 } from "../validation/schemas.js";
+import { generateUniqueWaybillCodes, generateBatchNumber } from "../utils/tracking.js";
 import { AppError } from "../utils/errors.js";
 import { isValidTransition } from "../utils/statusTransitions.js";
 import { sendNotificationEmail } from "../services/email.service.js";
@@ -717,6 +722,300 @@ router.patch("/users/:id/business", async (req, res) => {
       email: updated.email,
       isBusiness: updated.isBusiness,
       companyName: updated.companyName,
+    },
+  });
+});
+
+// ─── POST /admin/waybill-batches ─────────────────────────────────────────────
+
+router.post("/waybill-batches", validate(createWaybillBatchSchema), async (req, res) => {
+  const { businessId, size, notes } = req.body as {
+    businessId: string;
+    size: number;
+    notes?: string;
+  };
+
+  const business = await prisma.user.findUnique({ where: { id: businessId } });
+  if (!business) {
+    throw new AppError("Business not found", "USER_NOT_FOUND", 404);
+  }
+  if (!business.isBusiness) {
+    throw new AppError("Target user is not a business account", "NOT_A_BUSINESS", 400);
+  }
+
+  const codes = await generateUniqueWaybillCodes(prisma, size);
+  const batchNumber = await generateBatchNumber(prisma);
+  const adminId = req.user!.userId;
+
+  const result = await prisma.$transaction(async (tx) => {
+    const batch = await tx.waybillBatch.create({
+      data: {
+        batchNumber,
+        businessId,
+        size,
+        notes: notes ?? null,
+        createdBy: adminId,
+      },
+    });
+
+    await tx.waybill.createMany({
+      data: codes.map((code) => ({
+        code,
+        businessId,
+        batchId: batch.id,
+      })),
+    });
+
+    return batch;
+  });
+
+  res.status(201).json({
+    batch: {
+      id: result.id,
+      batchNumber: result.batchNumber,
+      businessId: result.businessId,
+      size: result.size,
+      notes: result.notes,
+      createdBy: result.createdBy,
+      printedAt: result.printedAt?.toISOString() ?? null,
+      createdAt: result.createdAt.toISOString(),
+    },
+    codes,
+  });
+});
+
+// ─── GET /admin/waybill-batches ──────────────────────────────────────────────
+
+router.get(
+  "/waybill-batches",
+  validateQuery(adminWaybillBatchesQuerySchema),
+  async (req, res) => {
+    const { page, pageSize, businessId } = (req as any).validatedQuery;
+
+    const where: Prisma.WaybillBatchWhereInput = {};
+    if (businessId) where.businessId = businessId;
+
+    const [batches, total] = await Promise.all([
+      prisma.waybillBatch.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          business: {
+            select: { id: true, name: true, surname: true, email: true, companyName: true },
+          },
+          waybills: { select: { status: true } },
+        },
+      }),
+      prisma.waybillBatch.count({ where }),
+    ]);
+
+    res.json({
+      data: batches.map((b) => {
+        const counts = { unused: 0, used: 0, void: 0 };
+        for (const w of b.waybills) {
+          if (w.status === "UNUSED") counts.unused++;
+          else if (w.status === "USED") counts.used++;
+          else if (w.status === "VOID") counts.void++;
+        }
+        return {
+          id: b.id,
+          batchNumber: b.batchNumber,
+          business: b.business,
+          size: b.size,
+          notes: b.notes,
+          counts,
+          printedAt: b.printedAt?.toISOString() ?? null,
+          createdAt: b.createdAt.toISOString(),
+        };
+      }),
+      total,
+      page,
+      pageSize,
+    });
+  },
+);
+
+// ─── GET /admin/waybill-batches/:id ──────────────────────────────────────────
+
+router.get("/waybill-batches/:id", async (req, res) => {
+  const id = req.params.id as string;
+
+  const batch = await prisma.waybillBatch.findUnique({
+    where: { id },
+    include: {
+      business: {
+        select: { id: true, name: true, surname: true, email: true, companyName: true },
+      },
+      waybills: {
+        orderBy: { code: "asc" },
+        select: {
+          id: true,
+          code: true,
+          status: true,
+          orderId: true,
+          usedAt: true,
+          voidedAt: true,
+          voidReason: true,
+        },
+      },
+    },
+  });
+
+  if (!batch) {
+    throw new AppError("Batch not found", "BATCH_NOT_FOUND", 404);
+  }
+
+  res.json({
+    batch: {
+      id: batch.id,
+      batchNumber: batch.batchNumber,
+      business: batch.business,
+      size: batch.size,
+      notes: batch.notes,
+      printedAt: batch.printedAt?.toISOString() ?? null,
+      createdAt: batch.createdAt.toISOString(),
+      waybills: batch.waybills.map((w) => ({
+        id: w.id,
+        code: w.code,
+        status: w.status,
+        orderId: w.orderId,
+        usedAt: w.usedAt?.toISOString() ?? null,
+        voidedAt: w.voidedAt?.toISOString() ?? null,
+        voidReason: w.voidReason,
+      })),
+    },
+  });
+});
+
+// ─── POST /admin/waybill-batches/:id/printed ─────────────────────────────────
+
+router.post("/waybill-batches/:id/printed", async (req, res) => {
+  const id = req.params.id as string;
+  const batch = await prisma.waybillBatch.findUnique({ where: { id } });
+  if (!batch) {
+    throw new AppError("Batch not found", "BATCH_NOT_FOUND", 404);
+  }
+  const updated = await prisma.waybillBatch.update({
+    where: { id },
+    data: { printedAt: batch.printedAt ?? new Date() },
+  });
+  res.json({
+    batch: {
+      id: updated.id,
+      batchNumber: updated.batchNumber,
+      printedAt: updated.printedAt?.toISOString() ?? null,
+    },
+  });
+});
+
+// ─── GET /admin/waybill-batches/:id/print.csv ────────────────────────────────
+
+router.get("/waybill-batches/:id/print.csv", async (req, res) => {
+  const id = req.params.id as string;
+
+  const batch = await prisma.waybillBatch.findUnique({
+    where: { id },
+    include: {
+      waybills: { orderBy: { code: "asc" }, select: { code: true } },
+    },
+  });
+
+  if (!batch) {
+    throw new AppError("Batch not found", "BATCH_NOT_FOUND", 404);
+  }
+
+  const lines = ["code", ...batch.waybills.map((w) => w.code)];
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${batch.batchNumber}.csv"`,
+  );
+  res.send(lines.join("\n") + "\n");
+});
+
+// ─── GET /admin/waybills ─────────────────────────────────────────────────────
+
+router.get("/waybills", validateQuery(adminWaybillsQuerySchema), async (req, res) => {
+  const { page, pageSize, businessId, status, search } = (req as any).validatedQuery;
+
+  const where: Prisma.WaybillWhereInput = {};
+  if (businessId) where.businessId = businessId;
+  if (status) where.status = status;
+  if (search) where.code = { contains: search, mode: "insensitive" };
+
+  const [waybills, total] = await Promise.all([
+    prisma.waybill.findMany({
+      where,
+      orderBy: { issuedAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        business: { select: { id: true, name: true, surname: true, email: true, companyName: true } },
+        batch: { select: { id: true, batchNumber: true } },
+        order: { select: { id: true, trackingNumber: true } },
+      },
+    }),
+    prisma.waybill.count({ where }),
+  ]);
+
+  res.json({
+    data: waybills.map((w) => ({
+      id: w.id,
+      code: w.code,
+      status: w.status,
+      business: w.business,
+      batch: w.batch,
+      order: w.order,
+      issuedAt: w.issuedAt.toISOString(),
+      usedAt: w.usedAt?.toISOString() ?? null,
+      voidedAt: w.voidedAt?.toISOString() ?? null,
+      voidReason: w.voidReason,
+    })),
+    total,
+    page,
+    pageSize,
+  });
+});
+
+// ─── POST /admin/waybills/:id/void ───────────────────────────────────────────
+
+router.post("/waybills/:id/void", validate(voidWaybillSchema), async (req, res) => {
+  const id = req.params.id as string;
+  const { reason } = req.body as { reason?: string };
+
+  const waybill = await prisma.waybill.findUnique({ where: { id } });
+  if (!waybill) {
+    throw new AppError("Waybill not found", "WAYBILL_NOT_FOUND", 404);
+  }
+  if (waybill.status === "USED") {
+    throw new AppError(
+      "Cannot void a waybill that is already allocated to an order",
+      "WAYBILL_ALREADY_USED",
+      409,
+    );
+  }
+  if (waybill.status === "VOID") {
+    throw new AppError("Waybill is already voided", "WAYBILL_ALREADY_VOID", 409);
+  }
+
+  const updated = await prisma.waybill.update({
+    where: { id },
+    data: {
+      status: "VOID",
+      voidedAt: new Date(),
+      voidReason: reason ?? null,
+    },
+  });
+
+  res.json({
+    waybill: {
+      id: updated.id,
+      code: updated.code,
+      status: updated.status,
+      voidedAt: updated.voidedAt?.toISOString() ?? null,
+      voidReason: updated.voidReason,
     },
   });
 });
