@@ -225,9 +225,14 @@ export const vehicleTypeSchema = z.enum(["MOTORCYCLE", "CAR", "VAN", "TRUCK"]);
 export const createDriverSchema = z.object({
   name: z.string().min(1).max(100),
   phone: phoneSchema,
-  email: z.string().email().max(255).optional(),
+  email: z.string().email().max(255),
   vehicleType: vehicleTypeSchema,
   vehiclePlate: z.string().max(20).optional(),
+  password: z.string().min(8, "Password must be at least 8 characters").max(128).optional(),
+});
+
+export const resetDriverPasswordSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters").max(128),
 });
 
 export const updateDriverSchema = z.object({
@@ -241,6 +246,32 @@ export const updateDriverSchema = z.object({
 
 export const assignDriverSchema = z.object({
   driverId: z.string().uuid().nullable(),
+});
+
+export const driverLoginSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(1).max(128),
+});
+
+export const driverPasswordSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters").max(128),
+});
+
+export const driverOrderStatusSchema = z.enum([
+  "PICKED_UP",
+  "IN_TRANSIT",
+  "DELIVERED",
+  "FAILED",
+  "DELAYED",
+]);
+
+export const driverUpdateOrderStatusSchema = z.object({
+  status: driverOrderStatusSchema,
+  note: z.string().max(500).optional(),
+});
+
+export const driverOrdersQuerySchema = z.object({
+  include: z.enum(["completed"]).optional(),
 });
 
 export const adminDriversQuerySchema = z.object({

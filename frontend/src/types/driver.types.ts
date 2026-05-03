@@ -16,7 +16,7 @@ export interface Driver {
 export interface CreateDriverPayload {
   name: string
   phone: string
-  email?: string
+  email: string
   vehicleType: VehicleType
   vehiclePlate?: string
 }

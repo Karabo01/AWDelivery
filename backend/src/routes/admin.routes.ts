@@ -1,5 +1,8 @@
+import bcrypt from "bcrypt";
 import { Router } from "express";
 import prisma from "../lib/prisma.js";
+
+const SALT_ROUNDS = 12;
 import { authenticate, requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
 import { isSuperAdminEmail } from "../lib/superAdmin.js";
 import { validate, validateQuery } from "../middleware/validate.js";
@@ -11,6 +14,7 @@ import {
   createDriverSchema,
   updateDriverSchema,
   assignDriverSchema,
+  resetDriverPasswordSchema,
   adminDriversQuerySchema,
   adminInvoicesQuerySchema,
   createWaybillBatchSchema,
@@ -350,25 +354,60 @@ router.get("/drivers", validateQuery(adminDriversQuerySchema), async (req, res) 
 // ─── POST /admin/drivers ─────────────────────────────────────────────────────
 
 router.post("/drivers", validate(createDriverSchema), async (req, res) => {
-  const { name, phone, email, vehicleType, vehiclePlate } = req.body;
+  const { name, phone, email, vehicleType, vehiclePlate, password } = req.body;
+  const normalizedEmail = String(email).trim().toLowerCase();
 
-  const existingDriver = await prisma.driver.findUnique({ where: { phone } });
-  if (existingDriver) {
+  const existingPhone = await prisma.driver.findUnique({ where: { phone } });
+  if (existingPhone) {
     throw new AppError("Driver with this phone already exists", "DRIVER_PHONE_EXISTS", 409);
   }
+
+  const existingEmail = await prisma.driver.findUnique({ where: { email: normalizedEmail } });
+  if (existingEmail) {
+    throw new AppError("Driver with this email already exists", "DRIVER_EMAIL_EXISTS", 409);
+  }
+
+  const passwordHash = password ? await bcrypt.hash(password, SALT_ROUNDS) : null;
 
   const driver = await prisma.driver.create({
     data: {
       name,
       phone,
-      email,
+      email: normalizedEmail,
       vehicleType,
       vehiclePlate,
+      passwordHash,
+      passwordChangedAt: passwordHash ? new Date() : null,
     },
   });
 
   res.status(201).json({ driver: formatDriver(driver) });
 });
+
+// ─── POST /admin/drivers/:id/reset-password ──────────────────────────────────
+
+router.post(
+  "/drivers/:id/reset-password",
+  validate(resetDriverPasswordSchema),
+  async (req, res) => {
+    const id = req.params.id as string;
+    const { password } = req.body as { password: string };
+
+    const driver = await prisma.driver.findUnique({ where: { id } });
+    if (!driver) {
+      throw new AppError("Driver not found", "DRIVER_NOT_FOUND", 404);
+    }
+
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+    await prisma.driver.update({
+      where: { id },
+      data: { passwordHash, passwordChangedAt: new Date() },
+    });
+
+    res.json({ message: "Driver password updated" });
+  },
+);
 
 // ─── PATCH /admin/drivers/:id ────────────────────────────────────────────────
 
@@ -1040,6 +1079,7 @@ function formatOrder(order: any) {
     bulkOrder: order.bulkOrder ?? null,
     invoiceId: order.invoiceId ?? null,
     invoice: order.invoice ?? null,
+    proofOfDelivery: order.proofOfDelivery ?? null,
     createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
     updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
   };

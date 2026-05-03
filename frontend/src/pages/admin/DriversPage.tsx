@@ -91,8 +91,8 @@ function DriversPage() {
     const payload: CreateDriverPayload = {
       name: formData.name,
       phone: formData.phone,
+      email: formData.email,
       vehicleType: formData.vehicleType,
-      ...(formData.email && { email: formData.email }),
       ...(formData.vehiclePlate && { vehiclePlate: formData.vehiclePlate }),
     }
 
@@ -149,12 +149,13 @@ function DriversPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
                   />
                 </div>
                 <div className="space-y-2">

@@ -58,6 +58,14 @@ export interface ParcelDetails {
   readonly description?: string
 }
 
+export interface ProofOfDelivery {
+  readonly photoUrl: string
+  readonly signatureUrl: string
+  readonly recipientName: string
+  readonly notes: string | null
+  readonly capturedAt: string
+}
+
 export interface Order {
   readonly id: string
   readonly trackingNumber: string
@@ -74,6 +82,7 @@ export interface Order {
   readonly invoiceId?: string | null
   readonly waybillId?: string | null
   readonly waybillCode?: string | null
+  readonly proofOfDelivery?: ProofOfDelivery | null
   readonly createdAt: string
   readonly updatedAt: string
 }

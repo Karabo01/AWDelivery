@@ -2,14 +2,17 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import path from "path";
 import rateLimit from "express-rate-limit";
 import { env } from "./lib/env.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { authenticate, authenticateDriver, requireAdmin } from "./middleware/auth.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import driverRoutes from "./routes/driver.routes.js";
 import healthRoutes from "./routes/health.routes.js";
 
 export function createApp() {
@@ -73,7 +76,34 @@ export function createApp() {
   app.use("/api/orders", orderRoutes);
   app.use("/api/payments", paymentRoutes);
   app.use("/api/admin", adminRoutes);
+  app.use("/api/driver", driverRoutes);
   app.use("/api/health", healthRoutes);
+
+  // ─── Proof-of-delivery file serving ──────────────────────────────────────────
+  // Accessible to the driver who uploaded (Bearer token) or any admin (cookie).
+  app.use(
+    "/api/uploads/pod",
+    async (req, res, next) => {
+      if (req.headers.authorization?.startsWith("Bearer ")) {
+        try {
+          await authenticateDriver(req, res, () => {});
+          if (req.driver) return next();
+        } catch {
+          /* fall through to admin check */
+        }
+      }
+      try {
+        await authenticate(req, res, () => {});
+        return requireAdmin(req, res, next);
+      } catch (err) {
+        next(err);
+      }
+    },
+    express.static(path.resolve(process.cwd(), "uploads", "pod"), {
+      fallthrough: false,
+      maxAge: "1h",
+    }),
+  );
 
   // ─── Global error handler (must be last) ─────────────────────────────────────
 

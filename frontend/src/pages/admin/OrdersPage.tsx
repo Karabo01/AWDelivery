@@ -9,6 +9,7 @@ import { OrderStatus, PaymentStatus } from '@/types/order.types'
 import { formatCentsToZar } from '@/lib/format'
 import type { Order } from '@/types/order.types'
 import type { Driver } from '@/types/driver.types'
+import PodPanel from '@/components/admin/PodPanel'
 
 const STATUS_OPTIONS = Object.values(OrderStatus)
 
@@ -229,6 +230,10 @@ function OrdersPage() {
                   ))}
                 </div>
               </div>
+
+              {selectedOrder.proofOfDelivery ? (
+                <PodPanel pod={selectedOrder.proofOfDelivery} />
+              ) : null}
             </div>
           </CardContent>
           </div>

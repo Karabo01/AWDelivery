@@ -13,10 +13,17 @@ export interface AuthPayload {
   email?: string;
 }
 
+export interface DriverAuthPayload {
+  driverId: string;
+  email: string;
+  type: "driver";
+}
+
 declare global {
   namespace Express {
     interface Request {
       user?: AuthPayload;
+      driver?: DriverAuthPayload;
     }
   }
 }
@@ -88,6 +95,55 @@ export function requireBusiness(
     );
   }
   next();
+}
+
+export async function authenticateDriver(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) {
+    throw new AppError("Missing or invalid driver token", "UNAUTHORIZED", 401);
+  }
+
+  const token = header.slice("Bearer ".length).trim();
+
+  try {
+    const payload = jwt.verify(token, env.JWT_SECRET) as DriverAuthPayload & {
+      iat?: number;
+    };
+
+    if (payload.type !== "driver") {
+      throw new AppError("Missing or invalid driver token", "UNAUTHORIZED", 401);
+    }
+
+    const driver = await prisma.driver.findUnique({
+      where: { id: payload.driverId },
+      select: { isActive: true, passwordChangedAt: true },
+    });
+
+    if (!driver || !driver.isActive) {
+      throw new AppError("Missing or invalid driver token", "UNAUTHORIZED", 401);
+    }
+
+    if (driver.passwordChangedAt && payload.iat) {
+      const changedAtSeconds = Math.floor(driver.passwordChangedAt.getTime() / 1000);
+      if (changedAtSeconds > payload.iat) {
+        throw new AppError("Session expired — please log in again", "UNAUTHORIZED", 401);
+      }
+    }
+
+    req.driver = {
+      driverId: payload.driverId,
+      email: payload.email,
+      type: "driver",
+    };
+    next();
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw new AppError("Missing or invalid driver token", "UNAUTHORIZED", 401);
+  }
 }
 
 export function requireSuperAdmin(
